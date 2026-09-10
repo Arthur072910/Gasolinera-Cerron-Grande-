@@ -1,0 +1,1 @@
+otro rato pego aca el scritp de la base de datos
