@@ -1,0 +1,1245 @@
+/* =========================================================================
+   SISTEMA DE DISENO - "El Cerron Grande"
+   Etapa: caparazon en blanco y negro (paleta de color aun no definida).
+   -------------------------------------------------------------------------
+   Concepto: el propio hardware de una gasolinera ya tiene un lenguaje
+   visual - el ticket termico y el contador LCD del surtidor. Este sistema
+   toma ese lenguaje en vez de imitar un panel SaaS generico:
+
+     - Los numeros (precios, litros, totales) siempre en monospace,
+       alineados como en un recibo real.
+     - Las pantallas de datos criticos (tanques, turno activo) se leen
+       como el visor de una bomba: fondo oscuro, digitos grandes.
+     - Los bordes son rectos y de 1-2px solidos. Cero sombras, cero
+       radios de esquina: esto no es una tarjeta de SaaS.
+     - El estado (disponible / en uso / alerta) se comunica por FORMA,
+       no por color, porque el color todavia no esta definido:
+         o  circulo hueco   = normal / disponible
+         (medio relleno)    = en uso / advertencia
+         *  circulo solido  = alerta / bloqueado
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* ---- Escala de grises (paleta final pendiente de definir) ---- */
+  --c-paper:   #ffffff;
+  --c-ink:     #0a0a0a;
+  --c-line:    #000000;
+  --c-muted:   #5c5c5c;
+  --c-soft:    #ececec;
+  --c-panel:   #0d0d0d;   /* fondo tipo visor LCD de la bomba */
+  --c-panel-text: #f4f4f4;
+
+  /* Reservado para cuando se defina la identidad de marca */
+  --c-acento:  #000000;
+
+  /* ---- Tipografia ---- */
+  --f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --f-mono:    'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+
+  /* ---- Espaciado base ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 16px;
+  --s-4: 24px;
+  --s-5: 40px;
+
+  --rail-ancho: 240px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--f-mono);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, .fuente-display {
+  font-family: var(--f-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+a { color: inherit; }
+
+.oculto { display: none !important; }
+
+/* =========================================================================
+   ESTRUCTURA GENERAL
+   ========================================================================= */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--rail-ancho) 1fr;
+  min-height: 100vh;
+}
+
+@media (max-width: 780px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+/* ---- Rail lateral: panel de funciones, como el costado de una bomba ---- */
+
+.rail {
+  background: var(--c-panel);
+  color: var(--c-panel-text);
+  border-right: 2px solid var(--c-line);
+  padding: var(--s-4) 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.rail__marca {
+  padding: 0 var(--s-3) var(--s-4);
+  border-bottom: 1px dashed #3a3a3a;
+  margin-bottom: var(--s-3);
+}
+
+.rail__marca .fuente-display {
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.rail__marca small {
+  display: block;
+  font-family: var(--f-mono);
+  color: #9a9a9a;
+  font-size: 0.7rem;
+  margin-top: var(--s-1);
+}
+
+.rail__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Botones numerados: son deliberados aqui, porque calcan las teclas
+   fisicas numeradas de un panel de despachador real, no decoracion. */
+.rail__key {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px var(--s-2);
+  text-decoration: none;
+  color: var(--c-panel-text);
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+  border: 1px solid transparent;
+}
+
+.rail__key:hover {
+  border-color: #444;
+}
+
+.rail__key.activo {
+  background: var(--c-panel-text);
+  color: var(--c-panel);
+}
+
+.rail__key .num {
+  font-weight: 700;
+  width: 20px;
+  text-align: right;
+  opacity: 0.7;
+}
+
+.rail__key.activo .num { opacity: 1; }
+
+.rail__pie {
+  padding: var(--s-3);
+  border-top: 1px dashed #3a3a3a;
+  font-size: 0.75rem;
+  color: #9a9a9a;
+}
+
+.rail__pie form { margin-top: var(--s-2); }
+
+.rail__pie button {
+  background: none;
+  border: 1px solid #4a4a4a;
+  color: #d8d8d8;
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.rail__pie button:hover { border-color: var(--c-panel-text); color: var(--c-panel-text); }
+
+/* ---- Area principal: estilo "cinta de ticket" ---- */
+
+.main {
+  padding: var(--s-4) var(--s-5);
+}
+
+@media (max-width: 780px) {
+  .main { padding: var(--s-3); }
+}
+
+.encabezado-vista {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 2px solid var(--c-line);
+  padding-bottom: var(--s-3);
+  margin-bottom: var(--s-4);
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.encabezado-vista h1 { font-size: 1.5rem; }
+
+.encabezado-vista .contexto {
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  color: var(--c-muted);
+  text-align: right;
+}
+
+/* =========================================================================
+   TICKET / RECIBO - contenedor de contenido con borde de corte perforado
+   ========================================================================= */
+
+.ticket {
+  background: var(--c-paper);
+  border: 1px solid var(--c-line);
+  position: relative;
+  margin-bottom: var(--s-4);
+}
+
+.ticket__borde-perforado {
+  height: 6px;
+  background-image: radial-gradient(circle at 6px 3px, var(--c-paper) 3px, transparent 3px);
+  background-size: 12px 6px;
+  background-repeat: repeat-x;
+  background-color: var(--c-line);
+  margin: -1px -1px 0 -1px;
+}
+
+.ticket__cuerpo {
+  padding: var(--s-4);
+}
+
+.ticket__titulo {
+  font-family: var(--f-display);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 1px dashed var(--c-line);
+  padding-bottom: var(--s-2);
+  margin-bottom: var(--s-3);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Linea tipo recibo: "Etiqueta ............ Valor" */
+.linea-ticket {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: 6px 0;
+}
+
+.linea-ticket__etiqueta { white-space: nowrap; }
+
+.linea-ticket__relleno {
+  flex: 1;
+  border-bottom: 1px dotted var(--c-muted);
+  height: 0;
+  transform: translateY(-4px);
+}
+
+.linea-ticket__valor {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.linea-ticket--total {
+  border-top: 1px solid var(--c-line);
+  margin-top: var(--s-2);
+  padding-top: var(--s-2);
+  font-size: 1.1rem;
+}
+
+/* =========================================================================
+   VISOR ESTILO SURTIDOR (pantalla de datos criticos: tanques, turno)
+   ========================================================================= */
+
+.visor {
+  background: var(--c-panel);
+  color: var(--c-panel-text);
+  border: 1px solid var(--c-line);
+  padding: var(--s-3);
+  font-family: var(--f-mono);
+}
+
+.visor__etiqueta {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #9a9a9a;
+  margin-bottom: 6px;
+}
+
+.visor__digitos {
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.visor__unidad {
+  font-size: 0.85rem;
+  color: #9a9a9a;
+  margin-left: 6px;
+}
+
+/* Barra de nivel (tanques) construida solo con bordes, sin color */
+.nivel-barra {
+  border: 1px solid #4a4a4a;
+  height: 14px;
+  margin-top: var(--s-2);
+  position: relative;
+  background-image: repeating-linear-gradient(90deg, #2a2a2a 0 1px, transparent 1px 10%);
+}
+
+.nivel-barra__relleno {
+  background: var(--c-panel-text);
+  height: 100%;
+}
+
+/* =========================================================================
+   INDICADORES DE ESTADO POR FORMA (sin depender de color)
+   ========================================================================= */
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+}
+
+.estado__marca {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.estado--normal .estado__marca { background: transparent; }
+.estado--advertencia .estado__marca {
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+.estado--alerta .estado__marca { background: currentColor; }
+
+/* =========================================================================
+   GRILLA DE TECLAS (panel de despachador: mangueras + teclado numerico)
+   ========================================================================= */
+
+.grilla-teclas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+
+.tecla {
+  border: 2px solid var(--c-line);
+  padding: var(--s-3);
+  background: var(--c-paper);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--f-mono);
+}
+
+.tecla:hover { background: var(--c-soft); }
+
+.tecla:active {
+  box-shadow: inset 0 0 0 2px var(--c-line);
+}
+
+.tecla[data-estado="en_uso"] {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.tecla__titulo {
+  font-family: var(--f-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tecla__meta {
+  font-size: 0.72rem;
+  color: var(--c-muted);
+}
+
+.tecla[data-estado="en_uso"] .tecla__meta { color: #cfcfcf; }
+
+/* Teclado numerico */
+.teclado-numerico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  max-width: 260px;
+  border: 2px solid var(--c-line);
+}
+
+.teclado-numerico button {
+  font-family: var(--f-mono);
+  font-size: 1.1rem;
+  padding: var(--s-3) 0;
+  background: var(--c-paper);
+  border: 1px solid var(--c-line);
+  cursor: pointer;
+}
+
+.teclado-numerico button:hover { background: var(--c-soft); }
+
+.teclado-numerico .doble { grid-column: span 2; }
+
+/* =========================================================================
+   TABLAS ESTILO BITACORA
+   ========================================================================= */
+
+table.bitacora {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+}
+
+table.bitacora th {
+  text-align: left;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  border-bottom: 2px solid var(--c-line);
+  padding: var(--s-2);
+}
+
+table.bitacora td {
+  border-bottom: 1px dashed #cfcfcf;
+  padding: var(--s-2);
+}
+
+table.bitacora tr:last-child td { border-bottom: 1px solid var(--c-line); }
+
+/* =========================================================================
+   BOTONES GENERALES
+   ========================================================================= */
+
+.btn {
+  display: inline-block;
+  font-family: var(--f-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 2px solid var(--c-line);
+  background: var(--c-paper);
+  color: var(--c-ink);
+  padding: 10px var(--s-4);
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+.btn:hover { background: var(--c-soft); }
+
+.btn--lleno {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.btn--lleno:hover { background: #2a2a2a; }
+
+.btn--ancho { display: block; width: 100%; }
+
+/* =========================================================================
+   FORMULARIOS
+   ========================================================================= */
+
+.campo { margin-bottom: var(--s-3); }
+
+.campo label {
+  display: block;
+  font-family: var(--f-display);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.campo input, .campo select {
+  width: 100%;
+  font-family: var(--f-mono);
+  font-size: 1rem;
+  padding: 10px;
+  border: 2px solid var(--c-line);
+  background: var(--c-paper);
+}
+
+.campo input:focus, .campo select:focus,
+.tecla:focus-visible, .btn:focus-visible, .rail__key:focus-visible {
+  outline: 3px solid var(--c-ink);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   PANTALLA DE LOGIN
+   ========================================================================= */
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-panel);
+  padding: var(--s-3);
+}
+
+.login-caja {
+  background: var(--c-paper);
+  border: 2px solid var(--c-line);
+  width: 100%;
+  max-width: 360px;
+  padding: var(--s-5) var(--s-4);
+}
+
+.login-caja h1 {
+  font-size: 1.3rem;
+  text-align: center;
+  margin-bottom: var(--s-1);
+}
+
+.login-caja .subt {
+  text-align: center;
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  color: var(--c-muted);
+  margin-bottom: var(--s-4);
+}
+
+.login-caja .demo-pins {
+  margin-top: var(--s-4);
+  font-size: 0.75rem;
+  color: var(--c-muted);
+  border-top: 1px dashed var(--c-line);
+  padding-top: var(--s-3);
+}
+
+.aviso-error {
+  border: 1px solid var(--c-line);
+  background: var(--c-soft);
+  padding: var(--s-2) var(--s-3);
+  font-size: 0.85rem;
+  margin-bottom: var(--s-3);
+}
+
+/* =========================================================================
+   UTILIDADES DE REJILLA (layouts de 2 y 3 columnas)
+   ========================================================================= */
+
+.cols-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--s-4); align-items: start; }
+.cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); align-items: start; }
+@media (max-width: 900px) {
+  .cols-2, .cols-3 { grid-template-columns: 1fr; }
+}
+
+/* =========================================================================
+   INDICADOR DE PASOS (flujo bomba -> manguera -> monto, apertura de turno...)
+   Es una secuencia real de pasos, por eso la numeracion esta justificada.
+   ========================================================================= */
+
+.pasos {
+  display: flex;
+  border: 2px solid var(--c-line);
+  margin-bottom: var(--s-4);
+}
+
+.pasos__paso {
+  flex: 1;
+  padding: var(--s-2) var(--s-3);
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  border-right: 1px dashed var(--c-line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pasos__paso:last-child { border-right: none; }
+
+.pasos__paso .num {
+  font-family: var(--f-display);
+  font-weight: 700;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.pasos__paso.completo { background: var(--c-ink); color: var(--c-paper); }
+.pasos__paso.completo .num { background: var(--c-paper); color: var(--c-ink); }
+.pasos__paso.pendiente { color: var(--c-muted); }
+
+/* =========================================================================
+   SELECCION EN TARJETA (bomba / manguera) - variante de .tecla con estado
+   ========================================================================= */
+
+.tarjeta-seleccion {
+  border: 2px solid var(--c-line);
+  padding: var(--s-3);
+  background: var(--c-paper);
+  cursor: pointer;
+  font-family: var(--f-mono);
+  text-align: left;
+  position: relative;
+}
+
+.tarjeta-seleccion:hover { background: var(--c-soft); }
+
+.tarjeta-seleccion.seleccionada {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.tarjeta-seleccion.bloqueada {
+  color: var(--c-muted);
+  cursor: not-allowed;
+  background: repeating-linear-gradient(135deg, var(--c-paper), var(--c-paper) 8px, var(--c-soft) 8px, var(--c-soft) 16px);
+}
+
+.tarjeta-seleccion .marca-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: var(--f-display);
+  font-size: 0.7rem;
+}
+
+/* =========================================================================
+   CHIPS / TABS DE CATEGORIA
+   ========================================================================= */
+
+.chip-grupo {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s-3);
+}
+
+.chip {
+  border: 1px solid var(--c-line);
+  padding: 6px 14px;
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  background: var(--c-paper);
+  cursor: pointer;
+}
+
+.chip.activo { background: var(--c-ink); color: var(--c-paper); }
+
+/* =========================================================================
+   BUSCADOR
+   ========================================================================= */
+
+.buscador {
+  display: flex;
+  border: 2px solid var(--c-line);
+  margin-bottom: var(--s-3);
+}
+
+.buscador input {
+  border: none;
+  padding: 10px 12px;
+  font-family: var(--f-mono);
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.buscador input:focus { outline: none; background: var(--c-soft); }
+
+.buscador .icono {
+  padding: 10px 14px;
+  border-left: 2px solid var(--c-line);
+  font-family: var(--f-mono);
+  color: var(--c-muted);
+}
+
+/* =========================================================================
+   CARRITO (tienda) - lineas con contador de cantidad
+   ========================================================================= */
+
+.carrito-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px 0;
+  border-bottom: 1px dashed #cfcfcf;
+}
+
+.carrito-item__nombre { flex: 1; }
+.carrito-item__nombre .meta { display: block; font-size: 0.72rem; color: var(--c-muted); }
+
+.stepper-cantidad {
+  display: flex;
+  border: 1px solid var(--c-line);
+}
+
+.stepper-cantidad button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: var(--c-paper);
+  font-family: var(--f-mono);
+  cursor: pointer;
+}
+
+.stepper-cantidad button:hover { background: var(--c-soft); }
+
+.stepper-cantidad .cantidad {
+  width: 30px;
+  text-align: center;
+  font-family: var(--f-mono);
+  line-height: 26px;
+  border-left: 1px solid var(--c-line);
+  border-right: 1px solid var(--c-line);
+}
+
+.carrito-item__subtotal {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  width: 70px;
+  text-align: right;
+}
+
+.carrito-vacio {
+  color: var(--c-muted);
+  font-size: 0.85rem;
+  padding: var(--s-3) 0;
+  text-align: center;
+  border: 1px dashed var(--c-muted);
+}
+
+/* =========================================================================
+   BADGES (tipo de comprobante, tipo de combustible, roles)
+   ========================================================================= */
+
+.badge {
+  display: inline-block;
+  border: 1px solid var(--c-line);
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+}
+
+.badge--lleno { background: var(--c-ink); color: var(--c-paper); border-color: var(--c-ink); }
+
+.grupo-radio {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.grupo-radio label {
+  border: 1px solid var(--c-line);
+  padding: 6px 12px;
+  font-family: var(--f-mono);
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grupo-radio input:checked + span { font-weight: 700; }
+
+/* =========================================================================
+   TARJETA RESUMEN PEQUENA (usada en dashboard / reportes)
+   ========================================================================= */
+
+.resumen-mini {
+  border: 1px solid var(--c-line);
+  padding: var(--s-3);
+}
+
+.resumen-mini__etiqueta {
+  font-size: 0.72rem;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+}
+
+.resumen-mini__valor {
+  font-family: var(--f-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* =========================================================================
+   PASOS (bomba -> manguera en pista)
+   ========================================================================= */
+
+.pasos {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+}
+
+.pasos__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--c-line);
+  color: var(--c-muted);
+}
+
+.pasos__item .num {
+  font-weight: 700;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.pasos__item.activo {
+  color: var(--c-ink);
+  background: var(--c-soft);
+  font-weight: 700;
+}
+
+.pasos__item.completo {
+  color: var(--c-ink);
+}
+
+.pasos__flecha { color: var(--c-muted); }
+
+.tecla[data-estado="mantenimiento"],
+.tecla[data-estado="bloqueada"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tecla.seleccionada {
+  outline: 3px solid var(--c-ink);
+  outline-offset: -3px;
+}
+
+/* =========================================================================
+   TIENDA: buscador y tabs de categoria
+   ========================================================================= */
+
+.barra-tienda {
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.buscador {
+  flex: 1;
+  min-width: 200px;
+  font-family: var(--f-mono);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 2px solid var(--c-line);
+  background: var(--c-paper);
+}
+
+.tabs-categoria {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tabs-categoria button {
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  border: 1px solid var(--c-line);
+  background: var(--c-paper);
+  cursor: pointer;
+}
+
+.tabs-categoria button.activo {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.tecla__stock-bajo {
+  border-top: 1px dashed var(--c-muted);
+  margin-top: 6px;
+  padding-top: 4px;
+  font-size: 0.68rem;
+}
+
+/* =========================================================================
+   CARRITO (lineas tipo ticket con control de cantidad)
+   ========================================================================= */
+
+.carrito-linea {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--c-muted);
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+}
+
+.carrito-linea__nombre { line-height: 1.25; }
+.carrito-linea__precio-unit { display: block; font-size: 0.72rem; color: var(--c-muted); }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--c-line);
+}
+
+.stepper button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: var(--c-paper);
+  cursor: pointer;
+  font-family: var(--f-mono);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.stepper button:hover { background: var(--c-soft); }
+
+.stepper span {
+  width: 24px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.carrito-linea__subtotal { font-weight: 700; text-align: right; min-width: 56px; }
+
+.carrito-vacio {
+  color: var(--c-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--s-4) 0;
+  border: 1px dashed var(--c-muted);
+}
+
+/* =========================================================================
+   SELECTOR DE COMPROBANTE Y METODO DE PAGO (grupo de botones tipo toggle)
+   ========================================================================= */
+
+.grupo-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--s-3);
+}
+
+.grupo-toggle button {
+  flex: 1;
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  padding: 8px 6px;
+  border: 1px solid var(--c-line);
+  background: var(--c-paper);
+  cursor: pointer;
+}
+
+.grupo-toggle button.activo {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.historial-cobro {
+  margin-top: var(--s-3);
+  font-size: 0.75rem;
+  color: var(--c-muted);
+  max-height: 90px;
+  overflow-y: auto;
+}
+
+.historial-cobro div { padding: 2px 0; border-bottom: 1px dotted #ddd; }
+
+/* =========================================================================
+   AMPLIACION: pestanas, carrito, avisos, pasos de asistente
+   (agregado al detallar POS Pista y POS Tienda)
+   ========================================================================= */
+
+/* ---- Pestanas de categoria (tienda) ---- */
+
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 2px solid var(--c-line);
+  margin-bottom: var(--s-3);
+}
+
+.pestanas button {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border: 1px solid var(--c-line);
+  border-bottom: none;
+  background: var(--c-soft);
+  cursor: pointer;
+  margin-bottom: -2px;
+}
+
+.pestanas button.activa {
+  background: var(--c-paper);
+  border-bottom: 2px solid var(--c-paper);
+  position: relative;
+}
+
+/* ---- Buscador ---- */
+
+.buscador {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+}
+
+.buscador input {
+  flex: 1;
+  font-family: var(--f-mono);
+  font-size: 0.95rem;
+  padding: 10px;
+  border: 2px solid var(--c-line);
+}
+
+/* ---- Pasos de asistente (wizard) ---- */
+
+.pasos {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--f-mono);
+  font-size: 0.78rem;
+  color: var(--c-muted);
+  padding: 6px 10px;
+  border: 1px solid var(--c-muted);
+}
+
+.paso .num-paso {
+  width: 18px;
+  height: 18px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.paso.activo {
+  color: var(--c-ink);
+  border-color: var(--c-ink);
+  font-weight: 700;
+}
+
+.paso.completado {
+  color: var(--c-ink);
+  border-color: var(--c-ink);
+}
+
+.paso.completado .num-paso {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+.bloque-paso {
+  border: 1px dashed var(--c-muted);
+  padding: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+
+.bloque-paso[data-oculto="1"] {
+  display: none;
+}
+
+.bloque-paso__titulo {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: var(--s-2);
+}
+
+/* ---- Carrito de tienda ---- */
+
+.linea-carrito {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #cfcfcf;
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+}
+
+.linea-carrito__nombre { flex: 1; }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--c-line);
+}
+
+.stepper button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: var(--c-soft);
+  font-family: var(--f-mono);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stepper span {
+  width: 26px;
+  text-align: center;
+  display: inline-block;
+}
+
+.linea-carrito__quitar {
+  border: 1px solid var(--c-line);
+  background: var(--c-paper);
+  cursor: pointer;
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+}
+
+.carrito-vacio {
+  color: var(--c-muted);
+  font-size: 0.85rem;
+  padding: var(--s-3) 0;
+  text-align: center;
+  border: 1px dashed var(--c-muted);
+}
+
+/* ---- Selector tipo "chips" (metodo de pago / comprobante / modalidad) ---- */
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s-3);
+}
+
+.chip {
+  font-family: var(--f-mono);
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  border: 2px solid var(--c-line);
+  background: var(--c-paper);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.chip.activo {
+  background: var(--c-ink);
+  color: var(--c-paper);
+}
+
+/* ---- Aviso / banner de confirmacion temporal ---- */
+
+.banner-aviso {
+  border: 2px solid var(--c-line);
+  background: var(--c-ink);
+  color: var(--c-paper);
+  padding: var(--s-2) var(--s-3);
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+  margin-bottom: var(--s-3);
+  display: none;
+}
+
+.banner-aviso.mostrar { display: block; }
+
+.banner-aviso.banner-aviso--error {
+  background: var(--c-paper);
+  color: var(--c-ink);
+  border-style: dashed;
+}
+
+/* ---- Insignia (badge) para diferencias/alertas en tablas ---- */
+
+.badge {
+  display: inline-block;
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+}
+
+.badge--ok { color: var(--c-ink); }
+.badge--alerta { color: var(--c-paper); background: var(--c-ink); }
+
+/* ---- Rejilla de formulario en 2 columnas ---- */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 var(--s-3);
+}
+
+@media (max-width: 620px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Filtro simple sobre tablas ---- */
+
+.filtro-tabla {
+  display: flex;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.filtro-tabla select {
+  font-family: var(--f-mono);
+  padding: 8px;
+  border: 2px solid var(--c-line);
+  background: var(--c-paper);
+}
