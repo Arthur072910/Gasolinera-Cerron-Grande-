@@ -17,7 +17,12 @@ de administrador, simulando al sensor).
    `DROP DATABASE IF EXISTS` incluido).
 3. Revisa `config/database.php` si tu MySQL no usa `root` sin
    contrasena en el puerto 3306.
-4. Abre el proyecto en el navegador e ingresa con un PIN de prueba
+4. Instala las dependencias de PHP con Composer (solo se usa para
+   generar el PDF de Reportes, ver `composer.json`):
+   ```
+   composer install
+   ```
+5. Abre el proyecto en el navegador e ingresa con un PIN de prueba
    (usuarios ya cargados en la base de datos):
    - `1111` → Administrador
    - `2222` → Cajero
@@ -90,5 +95,10 @@ Las variables de color viven centralizadas en `:root` de `style.css`.
       sensor por datos reales del HC-SR04.
 - [ ] Implementar Offline-First (`assets/js/offline_sync.js`) con
       IndexedDB/LocalStorage para el POS de pista.
-- [ ] Definir la paleta de color final e inyectarla en `assets/css/style.css`.
-- [ ] Exportar reportes a PDF/Excel (botones ya en la vista, deshabilitados).
+- [ ] Migrar el resto de vistas al tema industrial oscuro/naranja
+      (por ahora: login, rail, Panel general, Tanques, Precios,
+      Inventario/tienda **pendiente**, Proveedores **pendiente**,
+      Usuarios, Asistencia y Reportes). El resto sigue con el tema
+      anterior en blanco y negro de `assets/css/style.css`.
+- [x] Exportar reportes a PDF (mPDF, `composer.json`) y CSV/Excel —
+      ver `index.php?accion=reporte_pdf` / `reporte_csv`.

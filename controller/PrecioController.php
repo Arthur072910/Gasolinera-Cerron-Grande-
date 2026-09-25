@@ -10,14 +10,38 @@ require_once __DIR__ . '/../model/PrecioCombustible.php';
 
 class PrecioController
 {
+    /**
+     * Ademas del precio vigente, calcula la variacion contra el precio
+     * inmediatamente anterior de ese mismo combustible (si existe), para
+     * mostrar la tendencia (subio/bajo) en el panel.
+     */
     public static function precios(): array
     {
-        $filas = PrecioCombustible::obtenerVigentes(Database::obtenerConexion());
-        return array_map(fn ($f) => [
-            'combustible'   => ucfirst($f['tipo_combustible']),
-            'precio'        => (float) $f['precio_por_galon'],
-            'vigente_desde' => $f['fecha_inicio_vigencia'],
-        ], $filas);
+        $conexion = Database::obtenerConexion();
+        $vigentes = PrecioCombustible::obtenerVigentes($conexion);
+        $historial = PrecioCombustible::obtenerHistorial($conexion);
+
+        $resultado = [];
+        foreach ($vigentes as $f) {
+            $tipo     = $f['tipo_combustible'];
+            $actual   = (float) $f['precio_por_galon'];
+            $anterior = null;
+
+            foreach ($historial as $h) {
+                if ($h['tipo_combustible'] === $tipo && $h['fecha_fin_vigencia'] !== null) {
+                    $anterior = (float) $h['precio_por_galon'];
+                    break;
+                }
+            }
+
+            $resultado[] = [
+                'combustible'   => ucfirst($tipo),
+                'precio'        => $actual,
+                'vigente_desde' => $f['fecha_inicio_vigencia'],
+                'delta'         => $anterior !== null ? round($actual - $anterior, 3) : null,
+            ];
+        }
+        return $resultado;
     }
 
     public static function historialPrecios(): array

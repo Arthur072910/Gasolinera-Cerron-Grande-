@@ -1,0 +1,526 @@
+/**
+ * login.css
+ * -----------------------------------------------------------------------
+ * Hoja de estilos exclusiva de la pantalla de acceso (view/auth/login.php).
+ * Identidad "panel HMI / SCADA industrial": fondo casi negro con textura
+ * de cuadricula tipo plano, tarjeta en gris pizarra azulado con esquinas
+ * tipo mira, y el naranja industrial como unico color de acento (se usa
+ * tanto para lo primario como para las alertas, igual que en el tablero
+ * de referencia).
+ *
+ * Paleta:
+ *   Naranja Industrial      #EB5A28
+ *   Gris Ceniza             #96989A
+ *   Gris Pizarra Azulado    #567384
+ * -----------------------------------------------------------------------
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --login-naranja:   #eb5a28;
+  --login-naranja-fuerte: #ff6a35;
+  --login-ceniza:    #96989a;
+  --login-pizarra:   #567384;
+
+  --login-void:      #17222b;
+  --login-panel:     #212f39;
+  --login-panel-alt: #2b3c46;
+  --login-borde:     rgba(150, 152, 154, 0.22);
+  --login-borde-suave: rgba(150, 152, 154, 0.12);
+
+  --login-texto:     #eef1f2;
+  --login-texto-muted: var(--login-ceniza);
+
+  --login-f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --login-f-mono:    'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+
+  --login-radio: 6px;
+}
+
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(235, 90, 40, 0.11), transparent 45%),
+    radial-gradient(circle at 88% 92%, rgba(86, 115, 132, 0.20), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(150, 152, 154, 0.05) 0, rgba(150, 152, 154, 0.05) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(150, 152, 154, 0.05) 0, rgba(150, 152, 154, 0.05) 1px, transparent 1px, transparent 40px),
+    var(--login-void);
+  color: var(--login-texto);
+  font-family: var(--login-f-mono);
+}
+
+/* Vineta: oscurece los bordes de la pantalla para que la tarjeta respire */
+.login-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+  z-index: 1;
+}
+
+/* Linea de barrido muy sutil, como el refresco de una pantalla de monitoreo */
+.login-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent, rgba(235, 90, 40, 0.05) 50%, transparent);
+  height: 140px;
+  animation: login-barrido 9s linear infinite;
+}
+
+@keyframes login-barrido {
+  0%   { transform: translateY(-160px); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ---- Marco del "terminal" (esquinas fijas al viewport) ---- */
+
+.login-marco span {
+  position: fixed;
+  width: 22px;
+  height: 22px;
+  border-color: rgba(150, 152, 154, 0.28);
+  z-index: 2;
+}
+.login-marco span:nth-child(1) { top: 18px; left: 18px; border-top: 1px solid; border-left: 1px solid; }
+.login-marco span:nth-child(2) { top: 18px; right: 18px; border-top: 1px solid; border-right: 1px solid; }
+.login-marco span:nth-child(3) { bottom: 18px; left: 18px; border-bottom: 1px solid; border-left: 1px solid; }
+.login-marco span:nth-child(4) { bottom: 18px; right: 18px; border-bottom: 1px solid; border-right: 1px solid; }
+
+/* ---- Barra superior de estado ---- */
+
+.login-marca {
+  position: fixed;
+  top: 22px;
+  left: 26px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--login-f-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--login-texto-muted);
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.login-marca__punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--login-naranja);
+  box-shadow: 0 0 0 3px rgba(235, 90, 40, 0.18);
+  animation: login-pulso 2.4s ease-in-out infinite;
+  flex: none;
+}
+
+@keyframes login-pulso {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.login-reloj {
+  position: fixed;
+  top: 22px;
+  right: 26px;
+  font-family: var(--login-f-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--login-texto-muted);
+  z-index: 2;
+}
+.login-reloj span { color: var(--login-texto); font-weight: 500; }
+
+.login-terminal-id {
+  position: fixed;
+  bottom: 22px;
+  right: 26px;
+  font-family: var(--login-f-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: rgba(150, 152, 154, 0.5);
+  z-index: 2;
+}
+
+/* ---- Tarjeta principal ---- */
+
+.login-tarjeta {
+  position: relative;
+  z-index: 2;
+  width: min(94vw, 460px);
+  background: linear-gradient(165deg, var(--login-panel-alt), var(--login-panel) 60%, var(--login-void));
+  border: 1px solid var(--login-borde);
+  border-radius: var(--login-radio);
+  padding: 34px 32px 28px;
+  box-shadow:
+    0 40px 80px -24px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  animation: login-entrada 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes login-entrada {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Esquinas tipo "mira" de panel industrial */
+.login-tarjeta::before,
+.login-tarjeta::after,
+.login-tarjeta__esquina-a,
+.login-tarjeta__esquina-b {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--login-naranja);
+  opacity: 0.65;
+}
+.login-tarjeta::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+.login-tarjeta::after  { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+.login-tarjeta__esquina-a { bottom: -1px; left: -1px; border-bottom: 2px solid var(--login-naranja); border-left: 2px solid var(--login-naranja); }
+.login-tarjeta__esquina-b { bottom: -1px; right: -1px; border-bottom: 2px solid var(--login-naranja); border-right: 2px solid var(--login-naranja); }
+
+.login-tarjeta__barra {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--login-naranja), transparent);
+}
+
+/* ---- Encabezado ---- */
+
+.login-icono {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(235, 90, 40, 0.35);
+  border-radius: var(--login-radio);
+  background: linear-gradient(160deg, rgba(235, 90, 40, 0.16), rgba(235, 90, 40, 0.04));
+  color: var(--login-naranja);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(235, 90, 40, 0.5);
+}
+
+.login-icono svg { width: 22px; height: 22px; filter: drop-shadow(0 0 6px rgba(235, 90, 40, 0.5)); }
+
+.login-eyebrow {
+  text-align: center;
+  font-family: var(--login-f-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--login-texto-muted);
+  margin-bottom: 8px;
+}
+
+.login-titulo {
+  font-family: var(--login-f-display);
+  font-weight: 700;
+  font-size: 1.55rem;
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--login-texto);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.4);
+}
+
+.login-titulo span { color: var(--login-naranja); }
+
+.login-subt {
+  text-align: center;
+  font-family: var(--login-f-mono);
+  font-size: 0.78rem;
+  color: var(--login-texto-muted);
+  margin: 6px 0 26px;
+}
+
+/* ---- Aviso de error ---- */
+
+.login-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(235, 90, 40, 0.10);
+  border: 1px solid rgba(235, 90, 40, 0.4);
+  border-left: 3px solid var(--login-naranja);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: #ffd9c7;
+  margin-bottom: 20px;
+}
+.login-alerta__icono { color: var(--login-naranja); flex: none; line-height: 1.3; }
+
+/* ---- Campo de PIN segmentado ---- */
+
+.login-campo-label {
+  display: block;
+  font-family: var(--login-f-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--login-texto-muted);
+  margin-bottom: 10px;
+}
+
+.login-pin {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.login-pin__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  cursor: text;
+}
+
+.login-pin__caja {
+  width: 46px;
+  height: 56px;
+  border: 1px solid var(--login-borde);
+  border-radius: 5px;
+  background: linear-gradient(180deg, #05070a, var(--login-void));
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--login-f-mono);
+  font-size: 1.3rem;
+  color: var(--login-texto);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
+}
+
+.login-pin__caja::after {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--login-naranja-fuerte);
+  box-shadow: 0 0 8px rgba(235, 90, 40, 0.8);
+  display: none;
+}
+
+.login-pin__caja[data-lleno='1']::after { display: block; }
+.login-pin__caja[data-lleno='1'] { border-color: rgba(150, 152, 154, 0.45); }
+
+.login-pin__caja[data-activo='1'] {
+  border-color: var(--login-naranja);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(235, 90, 40, 0.18);
+  transform: translateY(-1px);
+}
+
+.login-pin.esta-mal .login-pin__caja {
+  animation: login-shake 0.3s ease;
+}
+
+@keyframes login-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* ---- Boton ---- */
+
+.login-btn {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 4px;
+  padding: 13px 16px;
+  background: linear-gradient(165deg, var(--login-naranja-fuerte), var(--login-naranja));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 10px 22px -10px rgba(235, 90, 40, 0.6);
+  color: #170a04;
+  font-family: var(--login-f-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.login-btn:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 12px 28px -8px rgba(235, 90, 40, 0.65); }
+.login-btn:active { transform: translateY(1px); }
+.login-btn:disabled { cursor: progress; }
+
+.login-btn__flecha { transition: transform 0.15s ease; }
+.login-btn:hover .login-btn__flecha { transform: translateX(3px); }
+
+/* Estado "verificando" tras enviar el formulario */
+.login-btn__spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(23, 10, 4, 0.35);
+  border-top-color: #170a04;
+  animation: login-girar 0.7s linear infinite;
+}
+.login-btn.cargando .login-btn__spinner { display: inline-block; }
+.login-btn.cargando .login-btn__flecha { display: none; }
+.login-btn.cargando { opacity: 0.92; }
+
+@keyframes login-girar { to { transform: rotate(360deg); } }
+
+.login-progreso {
+  height: 2px;
+  margin-top: 10px;
+  border-radius: 2px;
+  background: rgba(150, 152, 154, 0.15);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.login-progreso[data-activo='1'] { opacity: 1; }
+.login-progreso__relleno {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--login-pizarra), var(--login-naranja));
+  transition: width 1.15s cubic-bezier(0.3, 0.1, 0.3, 1);
+}
+
+.login-estado {
+  text-align: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--login-texto-muted);
+  margin-top: 8px;
+  min-height: 1.2em;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.login-estado[data-activo='1'] { opacity: 1; }
+
+/* ---- Teclado numerico (pensado para uso en tablet, sin teclado fisico) ---- */
+
+.login-teclado {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+  transition: opacity 0.2s ease;
+}
+
+.login-teclado button {
+  height: 58px;
+  border: 1px solid var(--login-borde);
+  border-radius: 5px;
+  background: linear-gradient(180deg, #05070a, var(--login-void));
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  color: var(--login-texto);
+  font-family: var(--login-f-mono);
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: border-color 0.1s ease, background-color 0.1s ease, transform 0.06s ease;
+}
+
+.login-teclado button:hover { border-color: rgba(235, 90, 40, 0.5); }
+.login-teclado button:active {
+  transform: scale(0.94);
+  background: linear-gradient(180deg, rgba(235, 90, 40, 0.22), var(--login-void));
+  border-color: rgba(235, 90, 40, 0.6);
+}
+
+.login-teclado__aux {
+  color: var(--login-texto-muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+.login-pin[data-bloqueado='1'],
+.login-teclado[data-bloqueado='1'] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ---- Responsive ----
+   El sistema se usa principalmente en tablet: el punto >=700px (tablet
+   vertical/horizontal chica) y >=1000px (tablet horizontal grande) son
+   los que mas importan; el ancho de la tarjeta escala con el viewport
+   (width: min(94vw, ...)) para no dar saltos bruscos entre tamanos. */
+
+@media (max-width: 420px) {
+  .login-tarjeta { padding: 26px 18px 20px; }
+  .login-pin { gap: 6px; }
+  .login-pin__caja { width: 34px; height: 44px; font-size: 1.05rem; }
+  .login-teclado { gap: 6px; }
+  .login-teclado button { height: 50px; font-size: 0.95rem; }
+  .login-titulo { font-size: 1.3rem; }
+  .login-marca, .login-reloj { display: none; }
+}
+
+@media (min-width: 700px) {
+  .login-tarjeta { width: min(88vw, 560px); padding: 34px 44px 26px; }
+  .login-icono { width: 50px; height: 50px; margin-bottom: 16px; }
+  .login-icono svg { width: 24px; height: 24px; }
+  .login-titulo { font-size: 1.7rem; }
+  .login-subt { font-size: 0.82rem; margin-bottom: 20px; }
+  .login-pin { gap: 10px; margin-bottom: 18px; }
+  .login-pin__caja { width: 52px; height: 58px; font-size: 1.4rem; }
+  .login-teclado { gap: 10px; margin-bottom: 16px; }
+  .login-teclado button { height: 54px; font-size: 1.15rem; }
+  .login-btn { padding: 14px 18px; font-size: 0.95rem; }
+}
+
+/* En tablet/laptop, la tarjeta crece sobre todo en ANCHO (teclas mas
+   anchas, no mas altas) para no quedarse sin espacio vertical. */
+@media (min-width: 1000px) {
+  .login-tarjeta { width: min(56vw, 640px); padding: 36px 52px 28px; }
+  .login-pin__caja { width: 56px; height: 60px; font-size: 1.5rem; }
+  .login-teclado button { height: 56px; font-size: 1.2rem; }
+}
+
+/* Salvaguarda para viewports bajitos (laptop con poca altura util,
+   ventana no maximizada, zoom del navegador): comprime el espaciado
+   vertical sin importar el ancho, para que el boton nunca quede fuera
+   de la pantalla. */
+@media (max-height: 760px) {
+  .login-page { padding-block: 14px; }
+  .login-tarjeta { padding-top: 24px; padding-bottom: 20px; }
+  .login-icono { margin-bottom: 12px; }
+  .login-subt { margin-bottom: 16px; }
+  .login-pin { margin-bottom: 14px; }
+  .login-teclado { margin-bottom: 12px; }
+  .login-teclado button { height: 48px; }
+}
+
+@media (max-height: 620px) {
+  .login-icono { display: none; }
+  .login-eyebrow { display: none; }
+  .login-teclado button { height: 42px; }
+}

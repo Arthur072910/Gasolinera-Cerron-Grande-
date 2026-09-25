@@ -73,4 +73,25 @@ class Sesion
         unset($_SESSION['flash']);
         return $flash;
     }
+
+    /**
+     * Guarda los datos de un formulario para poder re-mostrarlos (p.ej.
+     * reabrir un modal ya lleno) si la accion que se procesa a
+     * continuacion termina en error. Se combina con flash()/leerFlash():
+     * la vista decide usarlos solo cuando el flash resulto ser un error.
+     */
+    public static function flashDatos(array $datos): void
+    {
+        $_SESSION['flash_datos'] = $datos;
+    }
+
+    public static function leerFlashDatos(): ?array
+    {
+        if (!isset($_SESSION['flash_datos'])) {
+            return null;
+        }
+        $datos = $_SESSION['flash_datos'];
+        unset($_SESSION['flash_datos']);
+        return $datos;
+    }
 }

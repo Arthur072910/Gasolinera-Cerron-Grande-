@@ -79,6 +79,19 @@ class TurnoController
         ];
     }
 
+    /** Turnos abiertos ahora mismo (quien esta trabajando), para el panel general. */
+    public static function turnosActivos(): array
+    {
+        $filas = Turno::obtenerAbiertosConUsuario(Database::obtenerConexion());
+        return array_map(fn ($t) => [
+            'usuario'       => $t['usuario'],
+            'rol'           => $t['rol'],
+            'tipo_caja'     => $t['tipo_caja'] === 'pista' ? 'Pista' : 'Tienda',
+            'hora_inicio'   => date('H:i', strtotime($t['fecha_inicio'])),
+            'monto_inicial' => (float) $t['monto_inicial'],
+        ], $filas);
+    }
+
     public static function cerrarTurnoActual(int $idTurno, float $montoDeclarado, string $tipoCaja): void
     {
         $conexion = Database::obtenerConexion();

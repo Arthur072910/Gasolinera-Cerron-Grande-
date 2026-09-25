@@ -188,6 +188,29 @@ a { color: inherit; }
   padding: var(--s-4) var(--s-5);
 }
 
+/* ---- Transicion suave al cambiar de vista (ver assets/js/transiciones.js) ----
+   Entra con un fundido al cargar la pagina; transiciones.js agrega
+   .main--saliendo justo antes de navegar para que tambien salga con
+   fundido. Respeta prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .main {
+    animation: vista-entrada 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .main--saliendo {
+    animation: none;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+    pointer-events: none;
+  }
+
+  @keyframes vista-entrada {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
 @media (max-width: 780px) {
   .main { padding: var(--s-3); }
 }
@@ -499,56 +522,10 @@ table.bitacora tr:last-child td { border-bottom: 1px solid var(--c-line); }
   outline-offset: 2px;
 }
 
-/* =========================================================================
-   PANTALLA DE LOGIN
-   ========================================================================= */
-
-.login-shell {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--c-panel);
-  padding: var(--s-3);
-}
-
-.login-caja {
-  background: var(--c-paper);
-  border: 2px solid var(--c-line);
-  width: 100%;
-  max-width: 360px;
-  padding: var(--s-5) var(--s-4);
-}
-
-.login-caja h1 {
-  font-size: 1.3rem;
-  text-align: center;
-  margin-bottom: var(--s-1);
-}
-
-.login-caja .subt {
-  text-align: center;
-  font-family: var(--f-mono);
-  font-size: 0.8rem;
-  color: var(--c-muted);
-  margin-bottom: var(--s-4);
-}
-
-.login-caja .demo-pins {
-  margin-top: var(--s-4);
-  font-size: 0.75rem;
-  color: var(--c-muted);
-  border-top: 1px dashed var(--c-line);
-  padding-top: var(--s-3);
-}
-
-.aviso-error {
-  border: 1px solid var(--c-line);
-  background: var(--c-soft);
-  padding: var(--s-2) var(--s-3);
-  font-size: 0.85rem;
-  margin-bottom: var(--s-3);
-}
+/* La pantalla de login tiene su propia hoja de estilos independiente:
+   ver assets/css/login.css (identidad industrial con la paleta naranja/
+   gris ceniza/gris pizarra). Las reglas de este archivo aplican al
+   resto del sistema (rol administrador, cajero, despachador). */
 
 /* =========================================================================
    UTILIDADES DE REJILLA (layouts de 2 y 3 columnas)

@@ -16,17 +16,33 @@ $vistaActiva = $vistaActiva ?? '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($tituloPagina ?? NOMBRE_SISTEMA) ?> &middot; <?= NOMBRE_SISTEMA ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/rail.css">
 </head>
 <body>
+<?php
+$railClaseAvatar = ['administrador' => 'rail__avatar--administrador', 'cajero' => 'rail__avatar--cajero', 'despachador' => 'rail__avatar--despachador'];
+$railNombreActual = Sesion::nombreActual();
+$railPartesNombre = preg_split('/\s+/', trim($railNombreActual));
+$railIniciales = mb_strtoupper(mb_substr($railPartesNombre[0], 0, 1)) . (count($railPartesNombre) > 1 ? mb_strtoupper(mb_substr(end($railPartesNombre), 0, 1)) : '');
+?>
 <div class="app-shell">
     <nav class="rail">
         <div>
             <div class="rail__marca">
-                <div class="fuente-display">EL CERRON GRANDE</div>
-                <small>Sistema POS &middot; <?= VERSION_SISTEMA ?></small>
+                <div class="rail__marca-top">
+                    <div class="rail__icono">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0c0-4.5-7-13-7-13Z"/></svg>
+                    </div>
+                    <div>
+                        <div class="fuente-display rail__marca-nombre">EL CERRON GRANDE</div>
+                        <small>Sistema POS &middot; v<?= VERSION_SISTEMA ?></small>
+                    </div>
+                </div>
+                <div class="rail__estado"><span class="rail__estado-punto"></span> Sistema en linea</div>
             </div>
 
-            <ul class="rail__lista">
+            <ul class="rail__lista" id="rail-lista">
+                <span class="rail__resaltado" id="rail-resaltado"></span>
                 <?php if ($rol === 'administrador'): ?>
                     <li><a class="rail__key <?= $vistaActiva === 'dashboard' ? 'activo' : '' ?>" href="index.php?vista=dashboard"><span class="num">1</span> Panel general</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'tanques' ? 'activo' : '' ?>" href="index.php?vista=tanques"><span class="num">2</span> Tanques (Arduino)</a></li>
@@ -47,11 +63,19 @@ $vistaActiva = $vistaActiva ?? '';
         </div>
 
         <div class="rail__pie">
-            <div><?= htmlspecialchars(Sesion::nombreActual()) ?></div>
-            <div><?= ucfirst((string) $rol) ?></div>
+            <div class="rail__persona">
+                <span class="rail__avatar <?= $railClaseAvatar[$rol] ?? '' ?>"><?= htmlspecialchars($railIniciales) ?></span>
+                <div>
+                    <div class="rail__persona-nombre"><?= htmlspecialchars($railNombreActual) ?></div>
+                    <div class="rail__persona-rol"><?= htmlspecialchars(ucfirst((string) $rol)) ?></div>
+                </div>
+            </div>
             <form method="get" action="index.php">
                 <input type="hidden" name="accion" value="logout">
-                <button type="submit">Cerrar sesion</button>
+                <button type="submit">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                    Cerrar sesion
+                </button>
             </form>
         </div>
     </nav>

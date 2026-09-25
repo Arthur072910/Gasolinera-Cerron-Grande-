@@ -55,4 +55,24 @@ class Usuario
         $stmt = $conexion->prepare('UPDATE usuarios SET estado = :estado WHERE id_usuario = :id');
         $stmt->execute([':estado' => $estado, ':id' => $idUsuario]);
     }
+
+    public static function obtenerPorId(PDO $conexion, int $idUsuario): ?array
+    {
+        $stmt = $conexion->prepare('SELECT id_usuario, id_rol, nombre, estado FROM usuarios WHERE id_usuario = :id');
+        $stmt->execute([':id' => $idUsuario]);
+        $fila = $stmt->fetch();
+        return $fila ?: null;
+    }
+
+    public static function actualizar(PDO $conexion, int $idUsuario, int $idRol, string $nombre): void
+    {
+        $stmt = $conexion->prepare('UPDATE usuarios SET id_rol = :id_rol, nombre = :nombre WHERE id_usuario = :id');
+        $stmt->execute([':id_rol' => $idRol, ':nombre' => $nombre, ':id' => $idUsuario]);
+    }
+
+    public static function actualizarPin(PDO $conexion, int $idUsuario, string $pin): void
+    {
+        $stmt = $conexion->prepare('UPDATE usuarios SET pin_hash = :pin_hash WHERE id_usuario = :id');
+        $stmt->execute([':pin_hash' => password_hash($pin, PASSWORD_BCRYPT), ':id' => $idUsuario]);
+    }
 }

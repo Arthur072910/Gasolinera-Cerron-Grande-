@@ -1,0 +1,282 @@
+/**
+ * precios.css
+ * -----------------------------------------------------------------------
+ * Hoja de estilos exclusiva de Administrador > Precios
+ * (view/admin/precios.php). Solo se carga aqui, asi que nunca afecta
+ * otras vistas.
+ *
+ * Paleta:
+ *   Naranja Industrial      #EB5A28  -> precio que subio, accion
+ *   Gris Ceniza             #96989A  -> texto secundario, bordes
+ *   Gris Pizarra Azulado    #567384  -> neutro
+ *   Verde (excepcion aceptada, igual que en usuarios.css/tanques.css)
+ *   -> precio que bajo
+ * -----------------------------------------------------------------------
+ */
+
+:root {
+  --pr-naranja: #eb5a28;
+  --pr-naranja-fuerte: #ff6a35;
+  --pr-ceniza: #96989a;
+  --pr-pizarra: #567384;
+  --pr-verde: #3ddc84;
+  --pr-void: #17222b;
+  --pr-panel: #212f39;
+  --pr-panel-alt: #2b3c46;
+  --pr-borde: rgba(150, 152, 154, 0.22);
+  --pr-texto: #eef1f2;
+  --pr-texto-muted: var(--pr-ceniza);
+  --pr-f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --pr-f-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+}
+
+/* ---- Fondo del area de contenido (todo menos el rail) ---- */
+
+body { background: var(--pr-void); }
+
+.main {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(235, 90, 40, 0.08), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(150, 152, 154, 0.035) 0, rgba(150, 152, 154, 0.035) 1px, transparent 1px, transparent 36px),
+    repeating-linear-gradient(90deg, rgba(150, 152, 154, 0.035) 0, rgba(150, 152, 154, 0.035) 1px, transparent 1px, transparent 36px),
+    var(--pr-void);
+  min-height: 100vh;
+}
+
+.encabezado-vista { border-bottom: 1px solid var(--pr-borde); }
+.encabezado-vista h1 {
+  color: var(--pr-texto);
+  font-family: var(--pr-f-display);
+  display: flex; align-items: center; gap: 10px;
+}
+.encabezado-vista h1::before {
+  content: ''; width: 8px; height: 8px;
+  background: var(--pr-naranja);
+  box-shadow: 0 0 8px rgba(235, 90, 40, 0.7);
+  flex: none;
+}
+.encabezado-vista .contexto { color: var(--pr-texto-muted); font-family: var(--pr-f-mono); }
+
+.banner-aviso {
+  background: var(--pr-panel-alt);
+  border: 1px solid var(--pr-borde);
+  border-left: 3px solid var(--pr-pizarra);
+  color: var(--pr-texto);
+  border-radius: 4px;
+  font-family: var(--pr-f-mono);
+}
+.banner-aviso.banner-aviso--error {
+  background: rgba(235, 90, 40, 0.1);
+  border: 1px solid rgba(235, 90, 40, 0.4);
+  border-left: 3px solid var(--pr-naranja);
+  color: #ffd9c7;
+}
+.banner-aviso.mostrar { display: none; } /* se reemplaza por SweetAlert2, ver precios.js */
+
+/* ---- Panel principal ---- */
+
+.pr-page {
+  position: relative;
+  background: linear-gradient(165deg, var(--pr-panel-alt), var(--pr-panel) 55%, var(--pr-void));
+  border: 1px solid var(--pr-borde);
+  border-radius: 8px;
+  padding: 28px;
+  color: var(--pr-texto);
+  font-family: var(--pr-f-mono);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+.pr-page::before {
+  content: ''; position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--pr-naranja), transparent);
+}
+.pr-page__esquina { position: absolute; width: 14px; height: 14px; border-color: var(--pr-naranja); opacity: 0.55; pointer-events: none; }
+.pr-page__esquina--tl { top: 10px; left: 10px; border-top: 2px solid; border-left: 2px solid; }
+.pr-page__esquina--tr { top: 10px; right: 10px; border-top: 2px solid; border-right: 2px solid; }
+.pr-page__esquina--bl { bottom: 10px; left: 10px; border-bottom: 2px solid; border-left: 2px solid; }
+.pr-page__esquina--br { bottom: 10px; right: 10px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* ---- Cabecera ---- */
+
+.pr-cabecera {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px; margin-bottom: 22px;
+}
+.pr-eyebrow {
+  font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--pr-texto-muted); margin-bottom: 6px;
+}
+.pr-titulo {
+  font-family: var(--pr-f-display); font-weight: 700; font-size: 1.4rem;
+  text-transform: uppercase; letter-spacing: 0.02em; margin: 0; color: var(--pr-texto);
+}
+
+/* ---- Botones ---- */
+
+.pr-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--pr-borde); border-radius: 5px;
+  background: var(--pr-void); color: var(--pr-texto);
+  font-family: var(--pr-f-display); font-weight: 600; font-size: 0.82rem;
+  letter-spacing: 0.03em; padding: 10px 16px; cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.08s ease;
+  white-space: nowrap;
+}
+.pr-btn svg { flex: none; }
+.pr-btn:hover { border-color: rgba(235, 90, 40, 0.5); }
+.pr-btn:active { transform: translateY(1px); }
+.pr-btn--primario {
+  background: linear-gradient(165deg, var(--pr-naranja-fuerte), var(--pr-naranja));
+  border-color: transparent; color: #170a04;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 18px -10px rgba(235, 90, 40, 0.6);
+}
+.pr-btn--primario:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 10px 22px -8px rgba(235, 90, 40, 0.65); }
+
+/* ---- Tarjetas de tarifa ---- */
+
+.pr-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.pr-tarifa {
+  position: relative;
+  border: 1px solid var(--pr-borde);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 18px;
+  overflow: hidden;
+}
+.pr-tarifa::before {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+  background: var(--pr-naranja);
+  opacity: 0.6;
+}
+
+.pr-tarifa__combustible {
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pr-texto-muted); margin-bottom: 10px;
+}
+
+.pr-tarifa__precio {
+  font-family: var(--pr-f-display); font-weight: 700; font-size: 1.8rem;
+  color: var(--pr-texto); line-height: 1;
+}
+.pr-tarifa__precio span {
+  font-family: var(--pr-f-mono); font-size: 0.6rem; font-weight: 400;
+  color: var(--pr-texto-muted); margin-left: 4px;
+}
+
+.pr-tendencia {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.72rem; margin-top: 10px;
+}
+.pr-tendencia--sube { color: var(--pr-naranja); }
+.pr-tendencia--baja { color: var(--pr-verde); }
+.pr-tendencia--igual, .pr-tendencia--nueva { color: var(--pr-texto-muted); }
+
+.pr-tarifa__desde {
+  font-size: 0.7rem; color: var(--pr-texto-muted);
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid rgba(150, 152, 154, 0.12);
+}
+
+.pr-nota { font-size: 0.76rem; color: var(--pr-texto-muted); margin: 0 0 24px; }
+.pr-nota code {
+  background: var(--pr-void); border: 1px solid var(--pr-borde); border-radius: 3px;
+  padding: 1px 5px; font-size: 0.85em;
+}
+
+/* ---- Historial ---- */
+
+.pr-historial__titulo {
+  font-family: var(--pr-f-display); font-weight: 600; font-size: 0.9rem;
+  text-transform: uppercase; letter-spacing: 0.02em; color: var(--pr-texto);
+  margin-bottom: 12px;
+}
+
+.pr-tabla-wrap { overflow-x: auto; }
+.pr-tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.pr-tabla thead th {
+  text-align: left; font-family: var(--pr-f-display); font-weight: 600;
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pr-texto-muted); padding: 0 12px 12px; border-bottom: 1px solid var(--pr-borde);
+}
+.pr-tabla tbody td { padding: 12px; border-bottom: 1px solid rgba(150, 152, 154, 0.1); color: var(--pr-texto); }
+.pr-tabla tbody tr:last-child td { border-bottom: none; }
+.pr-tabla tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+.pr-vigente {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.7rem; color: var(--pr-verde);
+}
+.pr-vigente::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ---- Modal ---- */
+
+.pr-modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(5, 7, 9, 0.72);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pr-modal-overlay[hidden] { display: none; }
+
+.pr-modal {
+  position: relative; width: 100%; max-width: 400px;
+  max-height: calc(100vh - 40px); overflow-y: auto;
+  background: linear-gradient(165deg, var(--pr-panel-alt), var(--pr-panel) 60%, var(--pr-void));
+  border: 1px solid var(--pr-borde); border-radius: 8px;
+  padding: 30px 28px 26px; color: var(--pr-texto); font-family: var(--pr-f-mono);
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8);
+  animation: pr-aparecer 0.2s ease;
+}
+@keyframes pr-aparecer {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pr-modal__barra {
+  position: absolute; top: 0; left: 16px; right: 16px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--pr-naranja), transparent);
+}
+.pr-modal__cerrar {
+  position: absolute; top: 14px; right: 14px; width: 28px; height: 28px;
+  border: 1px solid var(--pr-borde); border-radius: 5px; background: transparent;
+  color: var(--pr-texto-muted); font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.pr-modal__cerrar:hover { border-color: var(--pr-naranja); color: var(--pr-naranja); }
+.pr-modal__eyebrow {
+  font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--pr-texto-muted); margin-bottom: 4px;
+}
+.pr-modal__titulo {
+  font-family: var(--pr-f-display); font-weight: 700; font-size: 1.15rem;
+  text-transform: uppercase; margin-bottom: 20px;
+}
+
+.pr-campo { margin-bottom: 16px; }
+.pr-campo label {
+  display: block; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pr-texto-muted); margin-bottom: 8px;
+}
+.pr-campo input, .pr-campo select {
+  width: 100%; background: var(--pr-void); border: 1px solid var(--pr-borde);
+  border-radius: 5px; padding: 11px 12px; color: var(--pr-texto);
+  font-family: var(--pr-f-mono); font-size: 0.9rem;
+}
+.pr-campo input:focus, .pr-campo select:focus {
+  outline: none; border-color: var(--pr-naranja);
+  box-shadow: 0 0 0 3px rgba(235, 90, 40, 0.15);
+}
+
+.pr-ayuda { font-size: 0.74rem; color: var(--pr-texto-muted); margin: -8px 0 4px; }
+
+.pr-modal__acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+@media (max-width: 560px) {
+  .pr-cabecera { flex-direction: column; }
+  .pr-btn--primario { width: 100%; justify-content: center; }
+}

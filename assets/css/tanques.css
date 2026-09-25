@@ -1,0 +1,452 @@
+/**
+ * tanques.css
+ * -----------------------------------------------------------------------
+ * Hoja de estilos exclusiva de Administrador > Tanques (Arduino)
+ * (view/admin/tanque_monitor.php). Solo diseño: los datos y la logica
+ * (lectura manual mientras no haya Arduino conectado) siguen igual, ver
+ * controller/TanqueController.php. Este archivo SOLO se carga aqui, asi
+ * que sus reglas nunca afectan otras vistas.
+ *
+ * Paleta:
+ *   Naranja Industrial      #EB5A28  -> alerta / stock minimo / accion
+ *   Gris Ceniza             #96989A  -> texto secundario, bordes
+ *   Gris Pizarra Azulado    #567384  -> advertencia / nivel medio
+ *   Verde (excepcion aceptada, igual que en usuarios.css) -> nivel normal
+ * -----------------------------------------------------------------------
+ */
+
+:root {
+  --tq-naranja: #eb5a28;
+  --tq-naranja-fuerte: #ff6a35;
+  --tq-ceniza: #96989a;
+  --tq-pizarra: #567384;
+  --tq-verde: #3ddc84;
+  --tq-void: #17222b;
+  --tq-panel: #212f39;
+  --tq-panel-alt: #2b3c46;
+  --tq-borde: rgba(150, 152, 154, 0.22);
+  --tq-texto: #eef1f2;
+  --tq-texto-muted: var(--tq-ceniza);
+  --tq-f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --tq-f-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+}
+
+/* ---- Fondo del area de contenido (todo menos el rail) ---- */
+
+body { background: var(--tq-void); }
+
+.main {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(235, 90, 40, 0.08), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(150, 152, 154, 0.035) 0, rgba(150, 152, 154, 0.035) 1px, transparent 1px, transparent 36px),
+    repeating-linear-gradient(90deg, rgba(150, 152, 154, 0.035) 0, rgba(150, 152, 154, 0.035) 1px, transparent 1px, transparent 36px),
+    var(--tq-void);
+  min-height: 100vh;
+}
+
+.encabezado-vista { border-bottom: 1px solid var(--tq-borde); }
+
+.encabezado-vista h1 {
+  color: var(--tq-texto);
+  font-family: var(--tq-f-display);
+  display: flex; align-items: center; gap: 10px;
+}
+.encabezado-vista h1::before {
+  content: ''; width: 8px; height: 8px;
+  background: var(--tq-naranja);
+  box-shadow: 0 0 8px rgba(235, 90, 40, 0.7);
+  flex: none;
+}
+.encabezado-vista .contexto { color: var(--tq-texto-muted); font-family: var(--tq-f-mono); }
+
+.banner-aviso {
+  background: var(--tq-panel-alt);
+  border: 1px solid var(--tq-borde);
+  border-left: 3px solid var(--tq-pizarra);
+  color: var(--tq-texto);
+  border-radius: 4px;
+  font-family: var(--tq-f-mono);
+}
+.banner-aviso.banner-aviso--error {
+  background: rgba(235, 90, 40, 0.1);
+  border: 1px solid rgba(235, 90, 40, 0.4);
+  border-left: 3px solid var(--tq-naranja);
+  color: #ffd9c7;
+}
+/* El aviso se muestra como SweetAlert2 (ver tanques.js); se oculta el banner de texto. */
+.banner-aviso.mostrar { display: none; }
+
+/* ---- Panel principal ---- */
+
+.tq-page {
+  position: relative;
+  background: linear-gradient(165deg, var(--tq-panel-alt), var(--tq-panel) 55%, var(--tq-void));
+  border: 1px solid var(--tq-borde);
+  border-radius: 8px;
+  padding: 28px;
+  color: var(--tq-texto);
+  font-family: var(--tq-f-mono);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.tq-page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 24px; right: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--tq-naranja), transparent);
+}
+
+.tq-page__esquina {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: var(--tq-naranja);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.tq-page__esquina--tl { top: 10px; left: 10px; border-top: 2px solid; border-left: 2px solid; }
+.tq-page__esquina--tr { top: 10px; right: 10px; border-top: 2px solid; border-right: 2px solid; }
+.tq-page__esquina--bl { bottom: 10px; left: 10px; border-bottom: 2px solid; border-left: 2px solid; }
+.tq-page__esquina--br { bottom: 10px; right: 10px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* ---- Cabecera ---- */
+
+.tq-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tq-eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tq-texto-muted);
+  margin-bottom: 6px;
+}
+
+.tq-titulo {
+  font-family: var(--tq-f-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: var(--tq-texto);
+}
+
+/* ---- Cadena de datos (sensor -> arduino -> ... -> panel) ---- */
+
+.tq-cadena {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--tq-borde);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.76rem;
+  color: var(--tq-texto-muted);
+  margin-bottom: 10px;
+}
+.tq-cadena span:not(:empty) { white-space: nowrap; }
+.tq-cadena svg { color: var(--tq-naranja); flex: none; opacity: 0.7; }
+
+.tq-nota {
+  font-size: 0.76rem;
+  color: var(--tq-texto-muted);
+  margin: 0 0 22px;
+}
+
+/* ---- Botones ---- */
+
+.tq-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--tq-borde);
+  border-radius: 5px;
+  background: var(--tq-void);
+  color: var(--tq-texto);
+  font-family: var(--tq-f-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.08s ease;
+  white-space: nowrap;
+}
+.tq-btn svg { flex: none; }
+.tq-btn:hover { border-color: rgba(235, 90, 40, 0.5); }
+.tq-btn:active { transform: translateY(1px); }
+
+.tq-btn--primario {
+  background: linear-gradient(165deg, var(--tq-naranja-fuerte), var(--tq-naranja));
+  border-color: transparent;
+  color: #170a04;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 18px -10px rgba(235, 90, 40, 0.6);
+}
+.tq-btn--primario:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 10px 22px -8px rgba(235, 90, 40, 0.65); }
+
+/* ---- Grilla de tanques ---- */
+
+.tq-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.tq-tanque {
+  border: 1px solid var(--tq-borde);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px;
+  transition: border-color 0.15s ease;
+}
+.tq-tanque--alerta { border-color: rgba(235, 90, 40, 0.4); }
+
+.tq-tanque__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tq-tanque__nombre { font-weight: 600; color: var(--tq-texto); font-size: 0.88rem; }
+.tq-tanque__combustible { color: var(--tq-texto-muted); font-size: 0.76rem; margin-top: 2px; }
+
+.tq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--tq-borde);
+  color: var(--tq-texto-muted);
+  white-space: nowrap;
+}
+.tq-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+.tq-badge--normal { color: var(--tq-verde); border-color: rgba(61, 220, 132, 0.35); background: rgba(61, 220, 132, 0.08); }
+.tq-badge--advertencia { color: var(--tq-pizarra); border-color: rgba(86, 115, 132, 0.4); background: rgba(86, 115, 132, 0.1); }
+.tq-badge--alerta { color: var(--tq-naranja); border-color: rgba(235, 90, 40, 0.4); background: rgba(235, 90, 40, 0.1); }
+
+.tq-tanque__cuerpo { display: flex; gap: 18px; }
+
+.tq-barra {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 150px;
+  border: 1px solid var(--tq-borde);
+  border-radius: 5px;
+  background: linear-gradient(180deg, #05070a, var(--tq-void));
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.tq-barra__relleno {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, var(--tq-naranja-fuerte), var(--tq-naranja));
+  transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tq-tanque--normal .tq-barra__relleno { background: linear-gradient(180deg, #5be89e, var(--tq-verde)); }
+.tq-tanque--advertencia .tq-barra__relleno { background: linear-gradient(180deg, #6f93a6, var(--tq-pizarra)); }
+
+.tq-barra__marca {
+  position: absolute;
+  left: 0; right: 0;
+  z-index: 2;
+}
+.tq-barra__marca-linea {
+  display: block;
+  height: 0;
+  border-top: 1px dashed rgba(235, 90, 40, 0.7);
+}
+
+.tq-tanque__datos { flex: 1; min-width: 0; }
+
+.tq-tanque__valor {
+  font-family: var(--tq-f-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--tq-texto);
+  line-height: 1;
+}
+.tq-tanque__valor span {
+  font-family: var(--tq-f-mono);
+  font-size: 0.62rem;
+  font-weight: 400;
+  color: var(--tq-texto-muted);
+  margin-left: 4px;
+}
+
+.tq-tanque__porcentaje {
+  font-size: 0.74rem;
+  color: var(--tq-texto-muted);
+  margin: 3px 0 12px;
+}
+
+.tq-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.74rem;
+  padding: 5px 0;
+  border-top: 1px solid rgba(150, 152, 154, 0.1);
+  color: var(--tq-texto-muted);
+}
+.tq-fila:first-of-type { border-top: none; }
+.tq-fila span:last-child { color: var(--tq-texto); font-weight: 500; }
+
+/* ---- Leyenda ---- */
+
+.tq-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--tq-borde);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 22px;
+}
+.tq-leyenda__texto { font-size: 0.72rem; color: var(--tq-texto-muted); margin-right: 8px; }
+
+/* ---- Historial ---- */
+
+.tq-historial__titulo {
+  font-family: var(--tq-f-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--tq-texto);
+  margin-bottom: 12px;
+}
+
+.tq-tabla-wrap { overflow-x: auto; }
+
+.tq-tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+.tq-tabla thead th {
+  text-align: left;
+  font-family: var(--tq-f-display);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tq-texto-muted);
+  padding: 0 12px 12px;
+  border-bottom: 1px solid var(--tq-borde);
+}
+
+.tq-tabla tbody td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(150, 152, 154, 0.1);
+  color: var(--tq-texto);
+}
+.tq-tabla tbody tr:last-child td { border-bottom: none; }
+.tq-tabla tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+.tq-vacio { text-align: center; color: var(--tq-texto-muted); padding: 20px 0 !important; }
+
+/* ---- Modal (nueva lectura) ---- */
+
+.tq-modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(5, 7, 9, 0.72);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.tq-modal-overlay[hidden] { display: none; }
+
+.tq-modal {
+  position: relative;
+  width: 100%; max-width: 420px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: linear-gradient(165deg, var(--tq-panel-alt), var(--tq-panel) 60%, var(--tq-void));
+  border: 1px solid var(--tq-borde);
+  border-radius: 8px;
+  padding: 30px 28px 26px;
+  color: var(--tq-texto);
+  font-family: var(--tq-f-mono);
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8);
+  animation: tq-aparecer 0.2s ease;
+}
+@keyframes tq-aparecer {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.tq-modal__barra {
+  position: absolute; top: 0; left: 16px; right: 16px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--tq-naranja), transparent);
+}
+
+.tq-modal__cerrar {
+  position: absolute; top: 14px; right: 14px;
+  width: 28px; height: 28px;
+  border: 1px solid var(--tq-borde);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--tq-texto-muted);
+  font-size: 1.1rem; line-height: 1;
+  cursor: pointer;
+}
+.tq-modal__cerrar:hover { border-color: var(--tq-naranja); color: var(--tq-naranja); }
+
+.tq-modal__eyebrow {
+  font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--tq-texto-muted); margin-bottom: 4px;
+}
+.tq-modal__titulo {
+  font-family: var(--tq-f-display); font-weight: 700; font-size: 1.15rem;
+  text-transform: uppercase; margin-bottom: 20px;
+}
+
+.tq-campo { margin-bottom: 16px; }
+.tq-campo-grupo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.tq-campo label {
+  display: block; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--tq-texto-muted); margin-bottom: 8px;
+}
+.tq-campo input, .tq-campo select {
+  width: 100%;
+  background: var(--tq-void);
+  border: 1px solid var(--tq-borde);
+  border-radius: 5px;
+  padding: 11px 12px;
+  color: var(--tq-texto);
+  font-family: var(--tq-f-mono);
+  font-size: 0.9rem;
+}
+.tq-campo input:focus, .tq-campo select:focus {
+  outline: none; border-color: var(--tq-naranja);
+  box-shadow: 0 0 0 3px rgba(235, 90, 40, 0.15);
+}
+
+.tq-modal__acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+@media (max-width: 560px) {
+  .tq-cabecera { flex-direction: column; }
+  .tq-btn--primario { width: 100%; justify-content: center; }
+  .tq-campo-grupo { grid-template-columns: 1fr; }
+  .tq-cadena { display: none; }
+}

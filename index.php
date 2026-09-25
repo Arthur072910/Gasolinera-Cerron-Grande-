@@ -6,9 +6,8 @@
  * Toda peticion pasa por aqui. Segun el parametro `vista` en la URL
  * y el rol guardado en sesion, se decide que pantalla mostrar.
  *
- * NOTA: caparazon sin base de datos. El login (AuthController) valida
- * contra un arreglo de PINs de ejemplo, solo para poder navegar el
- * diseno de las 3 pantallas de rol.
+ * El login (AuthController) valida el PIN contra `usuarios.pin_hash`
+ * en la base de datos.
  *
  * Ejemplos:
  *   index.php                      -> decide login o panel segun sesion
@@ -188,6 +187,11 @@ if ($accion === 'recepcion_nueva' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($accion === 'usuario_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/controller/UsuarioController.php';
+    Sesion::flashDatos([
+        'modo'   => 'crear',
+        'nombre' => (string) ($_POST['nombre'] ?? ''),
+        'id_rol' => (string) ($_POST['id_rol'] ?? ''),
+    ]);
     ejecutarAccion(['administrador'], 'usuarios', function () {
         if (($_POST['pin'] ?? '') !== ($_POST['pin_confirmar'] ?? '')) {
             throw new RuntimeException('El PIN y su confirmacion no coinciden.');
@@ -198,6 +202,30 @@ if ($accion === 'usuario_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             (string) ($_POST['pin'] ?? '')
         );
         return 'Usuario registrado.';
+    });
+}
+
+if ($accion === 'usuario_editar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/UsuarioController.php';
+    Sesion::flashDatos([
+        'modo'   => 'editar',
+        'id'     => (string) ($_POST['id_usuario'] ?? ''),
+        'nombre' => (string) ($_POST['nombre'] ?? ''),
+        'id_rol' => (string) ($_POST['id_rol'] ?? ''),
+    ]);
+    ejecutarAccion(['administrador'], 'usuarios', function () {
+        $pin = trim((string) ($_POST['pin'] ?? ''));
+        $pinConfirmar = trim((string) ($_POST['pin_confirmar'] ?? ''));
+        if ($pin !== $pinConfirmar) {
+            throw new RuntimeException('El PIN y su confirmacion no coinciden.');
+        }
+        UsuarioController::editarUsuario(
+            (int) ($_POST['id_usuario'] ?? 0),
+            (int) ($_POST['id_rol'] ?? 0),
+            (string) ($_POST['nombre'] ?? ''),
+            $pin !== '' ? $pin : null
+        );
+        return 'Usuario actualizado.';
     });
 }
 
@@ -219,6 +247,22 @@ if ($accion === 'tanque_lectura' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         return 'Lectura de tanque registrada (simulacion manual).';
     });
+}
+
+// Exportacion de reportes: responden con el archivo directo (PDF/CSV),
+// no con una vista HTML, asi que no pasan por ejecutarAccion().
+if ($accion === 'reporte_pdf' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Sesion::requerirRol(['administrador']);
+    require_once __DIR__ . '/controller/ReporteController.php';
+    ReporteController::generarPdf();
+    exit;
+}
+
+if ($accion === 'reporte_csv' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Sesion::requerirRol(['administrador']);
+    require_once __DIR__ . '/controller/ReporteController.php';
+    ReporteController::generarCsv();
+    exit;
 }
 
 // ---------------- Vistas (GET) ----------------

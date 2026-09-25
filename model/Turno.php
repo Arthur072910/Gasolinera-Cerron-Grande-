@@ -71,6 +71,18 @@ class Turno
         return $fila ?: null;
     }
 
+    public static function obtenerAbiertosConUsuario(PDO $conexion): array
+    {
+        $sql = "SELECT t.id_turno, t.tipo_caja, t.fecha_inicio, t.monto_inicial, u.nombre AS usuario, r.nombre_rol AS rol
+                FROM turnos t
+                JOIN asistencia a ON a.id_asistencia = t.id_asistencia
+                JOIN usuarios u ON u.id_usuario = a.id_usuario
+                JOIN roles r ON r.id_rol = u.id_rol
+                WHERE t.estado = 'abierto'
+                ORDER BY t.fecha_inicio";
+        return $conexion->query($sql)->fetchAll();
+    }
+
     public static function contarCerradosHoy(PDO $conexion): int
     {
         $sql = "SELECT COUNT(*) FROM turnos WHERE estado = 'cerrado' AND DATE(fecha_fin) = CURDATE()";
