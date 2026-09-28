@@ -94,6 +94,13 @@ class TurnoController
 
     public static function cerrarTurnoActual(int $idTurno, float $montoDeclarado, string $tipoCaja): void
     {
+        if ($montoDeclarado < 0) {
+            throw new RuntimeException('El monto declarado no puede ser negativo.');
+        }
+        if ($montoDeclarado > 100000) {
+            throw new RuntimeException('Ese monto declarado parece un error de digitacion.');
+        }
+
         $conexion = Database::obtenerConexion();
 
         if ($tipoCaja === 'pista') {
@@ -101,5 +108,45 @@ class TurnoController
         }
 
         Turno::cerrar($conexion, $idTurno, $montoDeclarado);
+    }
+
+    /**
+     * Resumen completo para la pantalla de conciliacion de caja de tienda:
+     * separa el efectivo (lo unico que realmente esta fisicamente en la
+     * gaveta) del resto de metodos de pago, para que la diferencia se
+     * calcule contra lo que el cajero de verdad deberia tener en mano
+     * (fondo inicial + ventas en efectivo), no contra el total de ventas
+     * (que incluye tarjeta/mixto, dinero que nunca paso por la caja).
+     */
+    public static function obtenerResumenCierre(string $tipoCaja): ?array
+    {
+        $turnoBase = self::obtenerTurnoParaCierre($tipoCaja);
+        if ($turnoBase === null) {
+            return null;
+        }
+
+        $conexion      = Database::obtenerConexion();
+        $ventasPorPago = Turno::obtenerVentasPorTipoPago($conexion, $turnoBase['id_turno']);
+        $totalTurno    = Turno::totalVentas($conexion, $turnoBase['id_turno']);
+
+        $ventasEfectivo = 0.0;
+        foreach ($ventasPorPago as $v) {
+            if ($v['metodo_pago'] === 'efectivo') {
+                $ventasEfectivo = (float) $v['total'];
+                break;
+            }
+        }
+
+        $efectivoEsperado = round($turnoBase['monto_inicial'] + $ventasEfectivo, 2);
+
+        return $turnoBase + [
+            'ventas_por_pago'    => $ventasPorPago,
+            'total_turno'        => $totalTurno,
+            'ventas_efectivo'    => $ventasEfectivo,
+            'efectivo_esperado'  => $efectivoEsperado,
+            'diferencia'         => $turnoBase['monto_declarado'] !== null
+                ? round($turnoBase['monto_declarado'] - $efectivoEsperado, 2)
+                : null,
+        ];
     }
 }

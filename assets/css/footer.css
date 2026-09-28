@@ -1,0 +1,116 @@
+/**
+ * footer.css
+ * -----------------------------------------------------------------------
+ * Pie de pagina compartido (view/layout/footer.php), presente en TODAS
+ * las vistas (administrador, cajero, despachador). Dos columnas
+ * compactas + barra de copyright, misma identidad industrial del rail.
+ *
+ * Paleta:
+ *   Naranja Industrial      #EB5A28
+ *   Gris Ceniza             #96989A
+ *   Gris Pizarra Azulado    #567384
+ * -----------------------------------------------------------------------
+ */
+
+:root {
+  --pie-naranja: #eb5a28;
+  --pie-ceniza: #96989a;
+  --pie-pizarra: #567384;
+  --pie-borde: rgba(150, 152, 154, 0.18);
+  --pie-texto: #d7dade;
+  --pie-texto-muted: var(--pie-ceniza);
+  --pie-f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --pie-f-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+}
+
+/* Fondo propio (independiente del fondo de .main): el pie debe verse
+   igual tanto en las vistas ya migradas al tema oscuro como en las que
+   todavia usan el shell claro original (cajero/despachador). */
+.pie-sistema {
+  margin: 40px -40px 0;
+  padding: 22px 40px 0;
+  background: linear-gradient(190deg, #2b3c46, #17222b 70%);
+  border-top: 1px solid var(--pie-borde);
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px 32px;
+  font-family: var(--pie-f-mono);
+}
+
+@media (max-width: 780px) {
+  .pie-sistema { margin: 40px -16px 0; padding-left: 16px; padding-right: 16px; }
+}
+
+.pie-sistema__col--sistema { justify-self: end; text-align: right; }
+
+.pie-sistema__marca {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.pie-sistema__icono {
+  flex: none;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(235, 90, 40, 0.35);
+  border-radius: 6px;
+  background: linear-gradient(160deg, rgba(235, 90, 40, 0.16), rgba(235, 90, 40, 0.03));
+  color: var(--pie-naranja);
+}
+.pie-sistema__icono svg { width: 13px; height: 13px; }
+
+.pie-sistema__nombre {
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: var(--pie-texto);
+}
+
+.pie-sistema__tagline {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: var(--pie-texto-muted);
+  line-height: 1.5;
+  max-width: 46ch;
+}
+
+.pie-sistema__titulo {
+  font-family: var(--pie-f-display);
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pie-pizarra);
+  margin-bottom: 6px;
+}
+
+.pie-sistema__dato {
+  font-size: 0.76rem;
+  color: var(--pie-texto-muted);
+  line-height: 1.6;
+}
+
+.pie-sistema__barra {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding: 14px 0 26px;
+  border-top: 1px dashed var(--pie-borde);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.7rem;
+  color: var(--pie-texto-muted);
+}
+
+.pie-sistema__barra strong {
+  color: var(--pie-texto);
+  font-weight: 600;
+}
+
+@media (max-width: 620px) {
+  .pie-sistema { grid-template-columns: 1fr; }
+  .pie-sistema__col--sistema { justify-self: start; text-align: left; }
+  .pie-sistema__barra { flex-direction: column; align-items: flex-start; }
+}

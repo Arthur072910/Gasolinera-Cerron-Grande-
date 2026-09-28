@@ -326,6 +326,23 @@ body { background: var(--tq-void); }
 }
 .tq-leyenda__texto { font-size: 0.72rem; color: var(--tq-texto-muted); margin-right: 8px; }
 
+/* ---- Bloque generico (grafica de tendencia) ---- */
+
+.tq-bloque {
+  border: 1px solid var(--tq-borde);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 18px;
+  margin-bottom: 22px;
+}
+.tq-bloque__titulo {
+  font-family: var(--tq-f-display); font-weight: 600; font-size: 0.85rem;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--tq-texto); margin-bottom: 14px;
+}
+.tq-grafica { position: relative; width: 100%; height: 240px; min-width: 0; }
+.tq-grafica canvas { max-width: 100%; }
+
 /* ---- Historial ---- */
 
 .tq-historial__titulo {

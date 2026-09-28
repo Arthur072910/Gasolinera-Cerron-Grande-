@@ -24,7 +24,8 @@ class Proveedor
 
     public static function obtenerTodos(PDO $conexion): array
     {
-        $sql = 'SELECT id_proveedor AS id, nombre_empresa AS nombre FROM proveedores ORDER BY nombre_empresa';
+        $sql = 'SELECT id_proveedor AS id, nombre_empresa AS nombre, registro_fiscal, telefono
+                FROM proveedores ORDER BY nombre_empresa';
         return $conexion->query($sql)->fetchAll();
     }
 
@@ -35,5 +36,34 @@ class Proveedor
         );
         $stmt->execute([':nombre' => $nombre, ':registro' => $registroFiscal, ':telefono' => $telefono ?: null]);
         return (int) $conexion->lastInsertId();
+    }
+
+    public static function obtenerPorId(PDO $conexion, int $idProveedor): ?array
+    {
+        $stmt = $conexion->prepare(
+            'SELECT id_proveedor AS id, nombre_empresa AS nombre, registro_fiscal, telefono FROM proveedores WHERE id_proveedor = :id'
+        );
+        $stmt->execute([':id' => $idProveedor]);
+        $fila = $stmt->fetch();
+        return $fila ?: null;
+    }
+
+    public static function actualizar(PDO $conexion, int $idProveedor, string $nombre, string $registroFiscal, ?string $telefono): void
+    {
+        $stmt = $conexion->prepare(
+            'UPDATE proveedores SET nombre_empresa = :nombre, registro_fiscal = :registro, telefono = :telefono WHERE id_proveedor = :id'
+        );
+        $stmt->execute([
+            ':nombre'   => $nombre,
+            ':registro' => $registroFiscal,
+            ':telefono' => $telefono ?: null,
+            ':id'       => $idProveedor,
+        ]);
+    }
+
+    public static function eliminar(PDO $conexion, int $idProveedor): void
+    {
+        $stmt = $conexion->prepare('DELETE FROM proveedores WHERE id_proveedor = :id');
+        $stmt->execute([':id' => $idProveedor]);
     }
 }

@@ -9,11 +9,15 @@ $tituloPagina    = 'Panel general';
 $subtituloPagina = 'Resumen de operacion del dia';
 require __DIR__ . '/../layout/header.php';
 
-$resumen        = ReporteController::resumen();
-$asistencia     = array_slice(AsistenciaController::registros(), 0, 6);
-$turnosActivos  = TurnoController::turnosActivos();
-$tanques        = TanqueController::estadoTanques();
-$alertasStock   = array_slice(InventarioController::alertasStock(), 0, 5);
+$resumen           = ReporteController::resumen();
+$asistencia        = array_slice(AsistenciaController::registros(), 0, 6);
+$turnosActivos     = TurnoController::turnosActivos();
+$tanques           = TanqueController::estadoTanques();
+$alertasStock      = array_slice(InventarioController::alertasStock(), 0, 5);
+$ventasCombustible = ReporteController::ventasPorCombustible();
+
+$totalPista  = array_sum(array_column($ventasCombustible, 'total'));
+$totalTienda = max(0, $resumen['ventas_hoy'] - $totalPista);
 
 $etiquetaTanque = [
     'verde'    => ['clase' => 'normal',      'texto' => 'Normal'],
@@ -61,6 +65,33 @@ $etiquetaTanque = [
             <div class="pg-stat__valor"><?= (int) $resumen['turnos_cerrados'] ?></div>
             <div class="pg-stat__etiqueta">Turnos cerrados hoy</div>
         </div>
+    </div>
+
+    <div class="pg-bloque">
+        <div class="pg-bloque__titulo"><span>Ventas de hoy por origen</span></div>
+        <?php if ($resumen['ventas_hoy'] <= 0): ?>
+            <p class="pg-vacio">Todavia no hay ventas registradas hoy.</p>
+        <?php else: ?>
+        <div class="pg-dividido">
+            <div class="pg-grafica"><canvas id="pg-grafica-origen"></canvas></div>
+            <div class="pg-leyenda-origen">
+                <div class="pg-leyenda-item">
+                    <span class="pg-leyenda-punto" style="background:var(--pg-naranja)"></span>
+                    <div>
+                        <div class="pg-leyenda-valor">$<?= number_format($totalPista, 2) ?></div>
+                        <div class="pg-leyenda-etiqueta">Pista (combustible)</div>
+                    </div>
+                </div>
+                <div class="pg-leyenda-item">
+                    <span class="pg-leyenda-punto" style="background:var(--pg-pizarra)"></span>
+                    <div>
+                        <div class="pg-leyenda-valor">$<?= number_format($totalTienda, 2) ?></div>
+                        <div class="pg-leyenda-etiqueta">Tienda de conveniencia</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div class="pg-columnas">
@@ -155,6 +186,12 @@ $etiquetaTanque = [
     </div>
 </div>
 
+
+<script>
+    window.DATOS_DASHBOARD = { totalPista: <?= json_encode($totalPista) ?>, totalTienda: <?= json_encode($totalTienda) ?> };
+</script>
 <script src="assets/js/vendor/sweetalert2.min.js"></script>
+<script src="assets/js/vendor/chart.umd.min.js"></script>
+<script src="assets/js/graficas-tema.js"></script>
 <script src="assets/js/dashboard.js"></script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

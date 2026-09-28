@@ -38,6 +38,34 @@ class Asistencia
         $stmt->execute([':id' => $idAsistencia]);
     }
 
+    /**
+     * TODAS las sesiones de asistencia abiertas (sin salida) de ese
+     * usuario, mas reciente primero. En condiciones normales deberia
+     * haber a lo sumo una; si hay varias (quedaron abandonadas por
+     * cerrar la pestana sin salir, reinicios del servidor, etc.) se
+     * usa para depurarlas al iniciar sesion de nuevo.
+     */
+    public static function obtenerTodasAbiertasPorUsuario(PDO $conexion, int $idUsuario): array
+    {
+        $stmt = $conexion->prepare(
+            'SELECT id_asistencia, fecha_hora_entrada FROM asistencia
+             WHERE id_usuario = :id_usuario AND fecha_hora_salida IS NULL
+             ORDER BY id_asistencia DESC'
+        );
+        $stmt->execute([':id_usuario' => $idUsuario]);
+        return $stmt->fetchAll();
+    }
+
+    /** Cierra una sesion con una fecha de salida especifica (no NOW()). */
+    public static function cerrarConFecha(PDO $conexion, int $idAsistencia, string $fechaHoraSalida): void
+    {
+        $stmt = $conexion->prepare(
+            'UPDATE asistencia SET fecha_hora_salida = :salida
+             WHERE id_asistencia = :id AND fecha_hora_salida IS NULL'
+        );
+        $stmt->execute([':salida' => $fechaHoraSalida, ':id' => $idAsistencia]);
+    }
+
     public static function obtenerTodasConUsuario(PDO $conexion): array
     {
         $sql = 'SELECT a.fecha_hora_entrada, a.fecha_hora_salida, u.nombre AS usuario, r.nombre_rol AS rol

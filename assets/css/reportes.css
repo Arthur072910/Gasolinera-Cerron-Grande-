@@ -159,6 +159,27 @@ body { background: var(--rp-void); }
   color: var(--rp-texto); margin-bottom: 14px;
 }
 
+.rp-dividido {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 20px;
+  align-items: center;
+}
+@media (max-width: 720px) { .rp-dividido { grid-template-columns: 1fr; } }
+
+.rp-grafica {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  min-width: 0;
+  border: 1px solid var(--rp-borde);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.015);
+  padding: 14px;
+  box-sizing: border-box;
+}
+.rp-grafica canvas { max-width: 100%; }
+
 .rp-tabla-wrap { overflow-x: auto; }
 .rp-tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .rp-tabla thead th {

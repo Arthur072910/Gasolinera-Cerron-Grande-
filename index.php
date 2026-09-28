@@ -89,9 +89,19 @@ if ($accion === 'venta_tienda' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $carrito,
             (string) ($_POST['metodo_pago'] ?? 'efectivo'),
             (string) ($_POST['tipo_comprobante'] ?? 'ticket'),
-            $turno['id_turno']
+            $turno['id_turno'],
+            (string) ($_POST['nombre_cliente'] ?? ''),
+            (string) ($_POST['nit_cliente'] ?? '')
         );
-        return sprintf('Venta cobrada por $%.2f (comprobante #%d).', $resultado['total'], $resultado['id_venta']);
+
+        $recibido = $resultado['metodo_pago'] === 'efectivo' ? (float) ($_POST['monto_recibido'] ?? 0) : null;
+        Sesion::guardarUltimoTicket($resultado + [
+            'usuario'   => Sesion::nombreActual(),
+            'recibido'  => $recibido,
+            'cambio'    => $recibido !== null ? round($recibido - $resultado['total'], 2) : null,
+        ]);
+
+        return sprintf('Venta cobrada por $%.2f (comprobante #%s).', $resultado['total'], $resultado['numero_comprobante']);
     });
 }
 
@@ -132,14 +142,20 @@ if ($accion === 'precio_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($accion === 'producto_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/controller/TiendaController.php';
-    require_once __DIR__ . '/model/Producto.php';
-    require_once __DIR__ . '/config/database.php';
+    require_once __DIR__ . '/controller/InventarioController.php';
+    Sesion::flashDatos([
+        'modo'          => 'crear',
+        'nombre'        => (string) ($_POST['nombre'] ?? ''),
+        'id_categoria'  => (string) ($_POST['id_categoria'] ?? ''),
+        'codigo_barras' => (string) ($_POST['codigo_barras'] ?? ''),
+        'precio'        => (string) ($_POST['precio'] ?? ''),
+        'stock'         => (string) ($_POST['stock'] ?? ''),
+        'stock_minimo'  => (string) ($_POST['stock_minimo'] ?? ''),
+    ]);
     ejecutarAccion(['administrador'], 'inventario', function () {
-        Producto::crear(
-            Database::obtenerConexion(),
+        InventarioController::registrarProducto(
             (int) ($_POST['id_categoria'] ?? 0),
-            trim((string) ($_POST['codigo_barras'] ?? '')),
+            (string) ($_POST['codigo_barras'] ?? ''),
             (string) ($_POST['nombre'] ?? ''),
             (float) ($_POST['precio'] ?? 0),
             (int) ($_POST['stock'] ?? 0),
@@ -149,17 +165,65 @@ if ($accion === 'producto_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 }
 
-if ($accion === 'categoria_nueva' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/model/Categoria.php';
-    require_once __DIR__ . '/config/database.php';
+if ($accion === 'producto_editar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/InventarioController.php';
+    Sesion::flashDatos([
+        'modo'          => 'editar',
+        'id'            => (string) ($_POST['id_producto'] ?? ''),
+        'nombre'        => (string) ($_POST['nombre'] ?? ''),
+        'id_categoria'  => (string) ($_POST['id_categoria'] ?? ''),
+        'codigo_barras' => (string) ($_POST['codigo_barras'] ?? ''),
+        'precio'        => (string) ($_POST['precio'] ?? ''),
+        'stock_minimo'  => (string) ($_POST['stock_minimo'] ?? ''),
+    ]);
     ejecutarAccion(['administrador'], 'inventario', function () {
-        Categoria::crear(Database::obtenerConexion(), (string) ($_POST['nombre'] ?? ''));
+        InventarioController::editarProducto(
+            (int) ($_POST['id_producto'] ?? 0),
+            (int) ($_POST['id_categoria'] ?? 0),
+            (string) ($_POST['codigo_barras'] ?? ''),
+            (string) ($_POST['nombre'] ?? ''),
+            (float) ($_POST['precio'] ?? 0),
+            (int) ($_POST['stock_minimo'] ?? 0)
+        );
+        return 'Producto actualizado.';
+    });
+}
+
+if ($accion === 'producto_stock' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/InventarioController.php';
+    ejecutarAccion(['administrador'], 'inventario', function () {
+        InventarioController::ajustarStock(
+            (int) ($_POST['id_producto'] ?? 0),
+            (int) ($_POST['cantidad'] ?? 0)
+        );
+        return 'Stock ajustado.';
+    });
+}
+
+if ($accion === 'producto_eliminar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/InventarioController.php';
+    ejecutarAccion(['administrador'], 'inventario', function () {
+        InventarioController::eliminarProducto((int) ($_POST['id_producto'] ?? 0));
+        return 'Producto eliminado.';
+    });
+}
+
+if ($accion === 'categoria_nueva' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/InventarioController.php';
+    ejecutarAccion(['administrador'], 'inventario', function () {
+        InventarioController::registrarCategoria((string) ($_POST['nombre'] ?? ''));
         return 'Categoria agregada.';
     });
 }
 
 if ($accion === 'proveedor_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/controller/ProveedorController.php';
+    Sesion::flashDatos([
+        'modo'            => 'crear',
+        'nombre'          => (string) ($_POST['nombre'] ?? ''),
+        'registro_fiscal' => (string) ($_POST['registro_fiscal'] ?? ''),
+        'telefono'        => (string) ($_POST['telefono'] ?? ''),
+    ]);
     ejecutarAccion(['administrador'], 'proveedores', function () {
         ProveedorController::registrarProveedor(
             (string) ($_POST['nombre'] ?? ''),
@@ -170,16 +234,56 @@ if ($accion === 'proveedor_nuevo' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 }
 
-if ($accion === 'recepcion_nueva' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($accion === 'proveedor_editar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/ProveedorController.php';
+    Sesion::flashDatos([
+        'modo'            => 'editar',
+        'id'              => (string) ($_POST['id_proveedor'] ?? ''),
+        'nombre'          => (string) ($_POST['nombre'] ?? ''),
+        'registro_fiscal' => (string) ($_POST['registro_fiscal'] ?? ''),
+        'telefono'        => (string) ($_POST['telefono'] ?? ''),
+    ]);
+    ejecutarAccion(['administrador'], 'proveedores', function () {
+        ProveedorController::editarProveedor(
+            (int) ($_POST['id_proveedor'] ?? 0),
+            (string) ($_POST['nombre'] ?? ''),
+            (string) ($_POST['registro_fiscal'] ?? ''),
+            trim((string) ($_POST['telefono'] ?? '')) ?: null
+        );
+        return 'Proveedor actualizado.';
+    });
+}
+
+if ($accion === 'proveedor_eliminar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/controller/ProveedorController.php';
     ejecutarAccion(['administrador'], 'proveedores', function () {
+        ProveedorController::eliminarProveedor((int) ($_POST['id_proveedor'] ?? 0));
+        return 'Proveedor eliminado.';
+    });
+}
+
+if ($accion === 'recepcion_nueva' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/ProveedorController.php';
+    Sesion::flashDatos([
+        'modo'               => 'recepcion',
+        'id_proveedor'       => (string) ($_POST['id_proveedor'] ?? ''),
+        'id_tanque'          => (string) ($_POST['id_tanque'] ?? ''),
+        'numero_factura'     => (string) ($_POST['numero_factura'] ?? ''),
+        'costo_total'        => (string) ($_POST['costo_total'] ?? ''),
+        'galones_facturados' => (string) ($_POST['galones_facturados'] ?? ''),
+        'galones_medidos'    => (string) ($_POST['galones_medidos'] ?? ''),
+        'nivel_cm'           => (string) ($_POST['nivel_cm'] ?? ''),
+    ]);
+    ejecutarAccion(['administrador'], 'proveedores', function () {
+        $nivelCm = trim((string) ($_POST['nivel_cm'] ?? ''));
         ProveedorController::registrarRecepcion(
             (int) ($_POST['id_proveedor'] ?? 0),
             (int) ($_POST['id_tanque'] ?? 0),
             (string) ($_POST['numero_factura'] ?? ''),
             (float) ($_POST['galones_facturados'] ?? 0),
             (float) ($_POST['galones_medidos'] ?? 0),
-            (float) ($_POST['costo_total'] ?? 0)
+            (float) ($_POST['costo_total'] ?? 0),
+            $nivelCm !== '' ? (float) $nivelCm : null
         );
         return 'Recepcion de cisterna registrada.';
     });

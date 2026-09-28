@@ -96,6 +96,13 @@ $etiquetaEstado = [
         <span class="tq-leyenda__texto">en o por debajo del minimo de alerta</span>
     </div>
 
+    <?php if (count($historial) > 1): ?>
+    <div class="tq-bloque">
+        <div class="tq-bloque__titulo">Tendencia de niveles</div>
+        <div class="tq-grafica"><canvas id="tq-grafica-tendencia"></canvas></div>
+    </div>
+    <?php endif; ?>
+
     <div class="tq-historial">
         <div class="tq-historial__titulo">Historial de lecturas del sensor</div>
         <div class="tq-tabla-wrap">
@@ -155,6 +162,11 @@ $etiquetaEstado = [
     </div>
 </div>
 
+<script>
+    window.DATOS_TANQUES = <?= json_encode(array_reverse($historial)) ?>;
+</script>
 <script src="assets/js/vendor/sweetalert2.min.js"></script>
+<script src="assets/js/vendor/chart.umd.min.js"></script>
+<script src="assets/js/graficas-tema.js"></script>
 <script src="assets/js/tanques.js"></script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

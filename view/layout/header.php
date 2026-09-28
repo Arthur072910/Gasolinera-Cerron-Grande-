@@ -17,6 +17,7 @@ $vistaActiva = $vistaActiva ?? '';
     <title><?= htmlspecialchars($tituloPagina ?? NOMBRE_SISTEMA) ?> &middot; <?= NOMBRE_SISTEMA ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/rail.css">
+    <link rel="stylesheet" href="assets/css/footer.css">
 </head>
 <body>
 <?php

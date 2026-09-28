@@ -94,4 +94,24 @@ class Sesion
         unset($_SESSION['flash_datos']);
         return $datos;
     }
+
+    /**
+     * Guarda el recibo de la ultima venta cobrada para que la pantalla de
+     * POS lo pueda mostrar (y permitir imprimirlo) justo despues del
+     * redirect que sigue a index.php?accion=venta_tienda.
+     */
+    public static function guardarUltimoTicket(array $datos): void
+    {
+        $_SESSION['ultimo_ticket'] = $datos;
+    }
+
+    public static function leerUltimoTicket(): ?array
+    {
+        if (!isset($_SESSION['ultimo_ticket'])) {
+            return null;
+        }
+        $datos = $_SESSION['ultimo_ticket'];
+        unset($_SESSION['ultimo_ticket']);
+        return $datos;
+    }
 }

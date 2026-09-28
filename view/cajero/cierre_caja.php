@@ -1,101 +1,114 @@
 <?php
 require_once __DIR__ . '/../../controller/TurnoController.php';
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../model/Turno.php';
 
 $tituloPagina    = 'Cierre de caja';
 $subtituloPagina = 'Conciliacion de caja central / tienda';
 $vistaActiva     = 'cierre_caja';
 require __DIR__ . '/../layout/header.php';
 
-$turno = TurnoController::obtenerTurnoParaCierre('tienda');
+$resumen = TurnoController::obtenerResumenCierre('tienda');
 
-if ($turno === null) {
-    echo '<div class="ticket"><div class="ticket__borde-perforado"></div><div class="ticket__cuerpo">'
-       . '<p>Todavia no tienes ninguna caja de tienda registrada. Entra a <a href="index.php?vista=pos_tienda">venta en tienda</a> para abrir una.</p>'
-       . '</div></div>';
-    require __DIR__ . '/../layout/footer.php';
-    exit;
-}
-
-$conexion      = Database::obtenerConexion();
-$ventasPorPago = Turno::obtenerVentasPorTipoPago($conexion, $turno['id_turno']);
-$totalTurno    = Turno::totalVentas($conexion, $turno['id_turno']);
-
-$nombresPago = ['efectivo' => 'Ventas en efectivo', 'tarjeta' => 'Ventas con tarjeta', 'mixto' => 'Ventas mixtas'];
+$nombresPago = ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'mixto' => 'Mixto'];
 ?>
+<link rel="stylesheet" href="assets/css/cierre_caja.css">
 
-<div class="ticket">
-    <div class="ticket__borde-perforado"></div>
-    <div class="ticket__cuerpo">
-        <div class="ticket__titulo"><span>Resumen de ventas del turno #<?= $turno['id_turno'] ?></span></div>
+<div class="cc-page">
+    <span class="cc-page__esquina cc-page__esquina--tl"></span>
+    <span class="cc-page__esquina cc-page__esquina--tr"></span>
+    <span class="cc-page__esquina cc-page__esquina--bl"></span>
+    <span class="cc-page__esquina cc-page__esquina--br"></span>
 
-        <?php if (empty($ventasPorPago)): ?>
-        <p style="color:var(--c-muted);">Todavia no se ha registrado ninguna venta en este turno.</p>
-        <?php endif; ?>
-        <?php foreach ($ventasPorPago as $v): ?>
-        <div class="linea-ticket">
-            <span class="linea-ticket__etiqueta"><?= $nombresPago[$v['metodo_pago']] ?? ucfirst($v['metodo_pago']) ?></span>
-            <span class="linea-ticket__relleno"></span>
-            <span class="linea-ticket__valor">$<?= number_format($v['total'], 2) ?></span>
+    <?php if ($resumen === null): ?>
+        <div class="cc-vacio">
+            <div class="cc-vacio__icono">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <p>Todavia no tienes ninguna caja de tienda registrada.</p>
+            <a class="cc-btn cc-btn--primario" href="index.php?vista=pos_tienda">Ir a venta en tienda</a>
+        </div>
+    <?php else: ?>
+
+    <div class="cc-cabecera">
+        <div>
+            <div class="cc-eyebrow">Conciliacion</div>
+            <h2 class="cc-titulo">Turno #<?= (int) $resumen['id_turno'] ?></h2>
+        </div>
+        <span class="cc-badge cc-badge--<?= $resumen['estado'] === 'abierto' ? 'normal' : 'cerrado' ?>">
+            <span></span> <?= $resumen['estado'] === 'abierto' ? 'Turno abierto' : 'Turno cerrado' ?>
+        </span>
+    </div>
+
+    <div class="cc-resumen">
+        <div class="cc-resumen__item">
+            <div class="cc-resumen__etiqueta">Fondo inicial</div>
+            <div class="cc-resumen__valor">$<?= number_format($resumen['monto_inicial'], 2) ?></div>
+        </div>
+        <?php foreach ($nombresPago as $clave => $etiqueta):
+            $encontrado = null;
+            foreach ($resumen['ventas_por_pago'] as $v) {
+                if ($v['metodo_pago'] === $clave) { $encontrado = $v; break; }
+            }
+        ?>
+        <div class="cc-resumen__item">
+            <div class="cc-resumen__etiqueta">Ventas <?= htmlspecialchars($etiqueta) ?></div>
+            <div class="cc-resumen__valor">$<?= number_format($encontrado ? $encontrado['total'] : 0, 2) ?></div>
         </div>
         <?php endforeach; ?>
-        <div class="linea-ticket linea-ticket--total">
-            <span class="linea-ticket__etiqueta">Total del turno</span>
-            <span class="linea-ticket__relleno"></span>
-            <span class="linea-ticket__valor">$<?= number_format($totalTurno, 2) ?></span>
+        <div class="cc-resumen__item cc-resumen__item--total">
+            <div class="cc-resumen__etiqueta">Total del turno</div>
+            <div class="cc-resumen__valor">$<?= number_format($resumen['total_turno'], 2) ?></div>
         </div>
     </div>
-</div>
 
-<?php if ($turno['estado'] === 'cerrado'): ?>
-<div class="ticket">
-    <div class="ticket__borde-perforado"></div>
-    <div class="ticket__cuerpo">
-        <div class="ticket__titulo"><span>Este turno ya esta cerrado</span></div>
-        <div class="linea-ticket linea-ticket--total">
-            <span class="linea-ticket__etiqueta">Monto declarado</span>
-            <span class="linea-ticket__relleno"></span>
-            <span class="linea-ticket__valor">$<?= number_format($turno['monto_declarado'], 2) ?></span>
-        </div>
-        <p style="color:var(--c-muted); font-size:0.85rem;">
-            Vuelve a <a href="index.php?vista=pos_tienda">venta en tienda</a> para abrir la siguiente caja.
-        </p>
+    <div class="cc-nota">
+        Solo el efectivo queda fisicamente en la gaveta. Las ventas con tarjeta no se cuentan al declarar el efectivo.
     </div>
-</div>
-<?php else: ?>
-<div class="ticket">
-    <div class="ticket__borde-perforado"></div>
-    <div class="ticket__cuerpo">
-        <div class="ticket__titulo"><span>Entrega de efectivo</span></div>
 
-        <form method="post" action="index.php?accion=cerrar_caja">
-            <div class="campo">
-                <label for="monto_entregado">Monto declarado por el cajero</label>
-                <input type="text" name="monto_declarado" id="monto_entregado" inputmode="decimal" placeholder="0.00" required>
+    <div class="cc-efectivo-esperado">
+        <div>
+            <div class="cc-efectivo-esperado__etiqueta">Efectivo esperado en caja</div>
+            <div class="cc-efectivo-esperado__formula">Fondo inicial ($<?= number_format($resumen['monto_inicial'], 2) ?>) + ventas en efectivo ($<?= number_format($resumen['ventas_efectivo'], 2) ?>)</div>
+        </div>
+        <div class="cc-efectivo-esperado__valor">$<?= number_format($resumen['efectivo_esperado'], 2) ?></div>
+    </div>
+
+    <?php if ($resumen['estado'] === 'cerrado'): ?>
+        <div class="cc-cierre-final">
+            <div class="cc-cierre-final__fila">
+                <span>Monto declarado por el cajero</span>
+                <span>$<?= number_format($resumen['monto_declarado'], 2) ?></span>
+            </div>
+            <div class="cc-cierre-final__fila cc-cierre-final__fila--diferencia">
+                <span>Diferencia</span>
+                <span class="cc-diferencia cc-diferencia--<?= $resumen['diferencia'] == 0 ? 'exacto' : ($resumen['diferencia'] > 0 ? 'sobra' : 'falta') ?>">
+                    <?= $resumen['diferencia'] > 0 ? '+' : '' ?>$<?= number_format($resumen['diferencia'], 2) ?>
+                    <?= $resumen['diferencia'] == 0 ? '(exacto)' : ($resumen['diferencia'] > 0 ? '(sobrante)' : '(faltante)') ?>
+                </span>
+            </div>
+            <a class="cc-btn cc-btn--primario cc-btn--ancho" href="index.php?vista=pos_tienda">Abrir la siguiente caja</a>
+        </div>
+    <?php else: ?>
+        <form class="cc-form" method="post" action="index.php?accion=cerrar_caja" id="form-cierre-caja">
+            <div class="cc-campo">
+                <label for="monto_entregado">Monto declarado por el cajero (efectivo contado)</label>
+                <input type="text" name="monto_declarado" id="monto_entregado" inputmode="decimal" placeholder="0.00" autocomplete="off" required>
             </div>
 
-            <div class="linea-ticket linea-ticket--total">
-                <span class="linea-ticket__etiqueta">Diferencia vs. total del turno ($<?= number_format($totalTurno, 2) ?>)</span>
-                <span class="linea-ticket__relleno"></span>
-                <span class="linea-ticket__valor" id="diferencia-caja">$0.00</span>
+            <div class="cc-diferencia-vivo">
+                <span>Diferencia vs. efectivo esperado ($<?= number_format($resumen['efectivo_esperado'], 2) ?>)</span>
+                <span id="diferencia-caja" class="cc-diferencia cc-diferencia--exacto">$0.00</span>
             </div>
 
-            <button class="btn btn--lleno" type="submit">Confirmar cierre de caja</button>
+            <button class="cc-btn cc-btn--primario cc-btn--ancho" type="submit" id="btn-confirmar-cierre">Confirmar cierre de caja</button>
         </form>
-    </div>
+    <?php endif; ?>
+
+    <?php endif; ?>
 </div>
 
+<script src="assets/js/vendor/sweetalert2.min.js"></script>
 <script>
-(function () {
-    const totalTurno = <?= json_encode($totalTurno) ?>;
-    const input = document.getElementById('monto_entregado');
-    const salida = document.getElementById('diferencia-caja');
-    input.addEventListener('input', function () {
-        const declarado = parseFloat(input.value) || 0;
-        salida.textContent = '$' + (declarado - totalTurno).toFixed(2);
-    });
-})();
+    window.DATOS_CIERRE_CAJA = <?= json_encode(['efectivoEsperado' => $resumen['efectivo_esperado'] ?? 0]) ?>;
 </script>
-<?php endif; ?>
+<script src="assets/js/cierre_caja.js"></script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

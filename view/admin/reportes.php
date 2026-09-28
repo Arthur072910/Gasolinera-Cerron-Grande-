@@ -56,43 +56,53 @@ $topProductos      = ReporteController::topProductos();
 
     <div class="rp-bloque">
         <div class="rp-bloque__titulo">Ventas por tipo de combustible</div>
-        <div class="rp-tabla-wrap">
-            <table class="rp-tabla">
-                <thead><tr><th>Combustible</th><th>Galones</th><th>Total</th></tr></thead>
-                <tbody>
-                <?php if (empty($ventasCombustible)): ?>
-                    <tr><td colspan="3" class="rp-vacio">Sin ventas de combustible registradas hoy.</td></tr>
-                <?php endif; ?>
-                <?php foreach ($ventasCombustible as $v): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($v['combustible']) ?></td>
-                        <td><?= number_format($v['galones'], 1) ?> gal</td>
-                        <td>$<?= number_format($v['total'], 2) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="rp-dividido">
+            <div class="rp-tabla-wrap">
+                <table class="rp-tabla">
+                    <thead><tr><th>Combustible</th><th>Galones</th><th>Total</th></tr></thead>
+                    <tbody>
+                    <?php if (empty($ventasCombustible)): ?>
+                        <tr><td colspan="3" class="rp-vacio">Sin ventas de combustible registradas hoy.</td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($ventasCombustible as $v): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($v['combustible']) ?></td>
+                            <td><?= number_format($v['galones'], 1) ?> gal</td>
+                            <td>$<?= number_format($v['total'], 2) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="rp-grafica">
+                <canvas id="rp-grafica-combustible"></canvas>
+            </div>
         </div>
     </div>
 
     <div class="rp-bloque">
         <div class="rp-bloque__titulo">Productos de tienda mas vendidos</div>
-        <div class="rp-tabla-wrap">
-            <table class="rp-tabla">
-                <thead><tr><th>Producto</th><th>Unidades</th><th>Total</th></tr></thead>
-                <tbody>
-                <?php if (empty($topProductos)): ?>
-                    <tr><td colspan="3" class="rp-vacio">Sin ventas de tienda registradas hoy.</td></tr>
-                <?php endif; ?>
-                <?php foreach ($topProductos as $p): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($p['producto']) ?></td>
-                        <td><?= $p['unidades'] ?></td>
-                        <td>$<?= number_format($p['total'], 2) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="rp-dividido">
+            <div class="rp-tabla-wrap">
+                <table class="rp-tabla">
+                    <thead><tr><th>Producto</th><th>Unidades</th><th>Total</th></tr></thead>
+                    <tbody>
+                    <?php if (empty($topProductos)): ?>
+                        <tr><td colspan="3" class="rp-vacio">Sin ventas de tienda registradas hoy.</td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($topProductos as $p): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($p['producto']) ?></td>
+                            <td><?= $p['unidades'] ?></td>
+                            <td>$<?= number_format($p['total'], 2) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="rp-grafica">
+                <canvas id="rp-grafica-productos"></canvas>
+            </div>
         </div>
         <p class="rp-nota">
             Enlaces relacionados: <a href="index.php?vista=inventario">inventario y kardex</a> &middot;
@@ -101,6 +111,15 @@ $topProductos      = ReporteController::topProductos();
     </div>
 </div>
 
+<script>
+    window.DATOS_REPORTE = {
+        ventasCombustible: <?= json_encode($ventasCombustible) ?>,
+        topProductos: <?= json_encode($topProductos) ?>
+    };
+</script>
+
 <script src="assets/js/vendor/sweetalert2.min.js"></script>
+<script src="assets/js/vendor/chart.umd.min.js"></script>
+<script src="assets/js/graficas-tema.js"></script>
 <script src="assets/js/reportes.js"></script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

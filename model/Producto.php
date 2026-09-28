@@ -53,12 +53,60 @@ class Producto
         return $conexion->query($sql)->fetchAll();
     }
 
+    /** Version completa del catalogo (incluye stock_minimo), para el panel de inventario. */
+    public static function obtenerTodosDetalle(PDO $conexion): array
+    {
+        $sql = "SELECT id_producto AS id, id_categoria, codigo_barras,
+                       nombre_producto AS nombre, precio_venta AS precio,
+                       stock_actual AS stock, stock_minimo
+                FROM productos ORDER BY nombre_producto";
+        return $conexion->query($sql)->fetchAll();
+    }
+
     public static function descontarStock(PDO $conexion, int $idProducto, int $cantidad): void
     {
         $stmt = $conexion->prepare(
             'UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id'
         );
         $stmt->execute([':cantidad' => $cantidad, ':id' => $idProducto]);
+    }
+
+    public static function ajustarStock(PDO $conexion, int $idProducto, int $cantidad): void
+    {
+        $stmt = $conexion->prepare(
+            'UPDATE productos SET stock_actual = stock_actual + :cantidad WHERE id_producto = :id'
+        );
+        $stmt->execute([':cantidad' => $cantidad, ':id' => $idProducto]);
+    }
+
+    public static function actualizar(
+        PDO $conexion,
+        int $idProducto,
+        int $idCategoria,
+        ?string $codigoBarras,
+        string $nombre,
+        float $precio,
+        int $stockMinimo
+    ): void {
+        $stmt = $conexion->prepare(
+            'UPDATE productos SET id_categoria = :id_categoria, codigo_barras = :codigo_barras,
+                    nombre_producto = :nombre, precio_venta = :precio, stock_minimo = :stock_minimo
+             WHERE id_producto = :id'
+        );
+        $stmt->execute([
+            ':id_categoria'  => $idCategoria,
+            ':codigo_barras' => $codigoBarras !== '' ? $codigoBarras : null,
+            ':nombre'        => $nombre,
+            ':precio'        => $precio,
+            ':stock_minimo'  => $stockMinimo,
+            ':id'            => $idProducto,
+        ]);
+    }
+
+    public static function eliminar(PDO $conexion, int $idProducto): void
+    {
+        $stmt = $conexion->prepare('DELETE FROM productos WHERE id_producto = :id');
+        $stmt->execute([':id' => $idProducto]);
     }
 
     public static function crear(

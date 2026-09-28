@@ -160,6 +160,23 @@ body { background: var(--pg-void); }
 }
 @media (max-width: 780px) { .pg-columnas { grid-template-columns: 1fr; } }
 
+.pg-dividido {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 20px;
+  align-items: center;
+}
+@media (max-width: 480px) { .pg-dividido { grid-template-columns: 1fr; } }
+
+.pg-grafica { position: relative; width: 100%; height: 160px; min-width: 0; }
+.pg-grafica canvas { max-width: 100%; }
+
+.pg-leyenda-origen { display: flex; flex-direction: column; gap: 14px; }
+.pg-leyenda-item { display: flex; align-items: center; gap: 10px; }
+.pg-leyenda-punto { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.pg-leyenda-valor { font-family: var(--pg-f-display); font-weight: 700; font-size: 1.1rem; color: var(--pg-texto); }
+.pg-leyenda-etiqueta { font-size: 0.72rem; color: var(--pg-texto-muted); margin-top: 1px; }
+
 .pg-bloque {
   border: 1px solid var(--pg-borde);
   border-radius: 7px;

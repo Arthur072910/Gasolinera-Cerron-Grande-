@@ -56,8 +56,20 @@ class PrecioController
         ], $filas);
     }
 
+    private const COMBUSTIBLES_VALIDOS = ['super', 'regular', 'diesel'];
+
     public static function registrarNuevoPrecio(string $combustible, float $precio, int $idUsuario): void
     {
-        PrecioCombustible::registrarNuevo(Database::obtenerConexion(), strtolower($combustible), $precio, $idUsuario);
+        $tipo = strtolower(trim($combustible));
+        if (!in_array($tipo, self::COMBUSTIBLES_VALIDOS, true)) {
+            throw new RuntimeException('Tipo de combustible invalido.');
+        }
+        if ($precio <= 0) {
+            throw new RuntimeException('El precio por galon debe ser mayor a cero.');
+        }
+        if ($precio > 20) {
+            throw new RuntimeException('Ese precio parece un error de digitacion (mayor a $20 por galon).');
+        }
+        PrecioCombustible::registrarNuevo(Database::obtenerConexion(), $tipo, $precio, $idUsuario);
     }
 }

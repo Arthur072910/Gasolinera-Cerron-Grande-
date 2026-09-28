@@ -13,6 +13,7 @@ require_once __DIR__ . '/../model/Manguera.php';
 require_once __DIR__ . '/../model/PrecioCombustible.php';
 require_once __DIR__ . '/../model/Venta.php';
 require_once __DIR__ . '/../model/DetalleVentaCombustible.php';
+require_once __DIR__ . '/../model/Tanque.php';
 
 class DespachoController
 {
@@ -62,6 +63,15 @@ class DespachoController
 
         if ($galones <= 0 || $monto <= 0) {
             throw new RuntimeException('El monto o los galones deben ser mayores a cero.');
+        }
+
+        $tanque = Tanque::obtenerNivelCalculado($conexion, (int) $manguera['id_tanque']);
+        if ($galones > $tanque['nivel_actual']) {
+            throw new RuntimeException(sprintf(
+                'No hay suficiente combustible en el tanque (disponible: %.1f gal, solicitado: %.1f gal).',
+                $tanque['nivel_actual'],
+                $galones
+            ));
         }
 
         $conexion->beginTransaction();

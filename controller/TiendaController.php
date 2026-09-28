@@ -11,6 +11,8 @@ require_once __DIR__ . '/../model/DetalleVentaTienda.php';
 
 class TiendaController
 {
+    private const COMPROBANTES_FISCALES = ['factura', 'ccf'];
+
     public static function categorias(): array
     {
         return Categoria::obtenerTodas(Database::obtenerConexion());
@@ -44,24 +46,63 @@ class TiendaController
      * El precio SIEMPRE se relee de `productos` en el servidor (nunca
      * del formulario) para no confiar en el precio que viajo del navegador.
      */
-    public static function procesarVenta(array $carrito, string $metodoPago, string $tipoComprobante, int $idTurno): array
-    {
+    public static function procesarVenta(
+        array $carrito,
+        string $metodoPago,
+        string $tipoComprobante,
+        int $idTurno,
+        ?string $nombreCliente = null,
+        ?string $nitCliente = null
+    ): array {
         if (empty($carrito)) {
             throw new RuntimeException('El carrito esta vacio.');
+        }
+
+        $metodosValidos = ['efectivo', 'tarjeta', 'mixto'];
+        if (!in_array($metodoPago, $metodosValidos, true)) {
+            throw new RuntimeException('Metodo de pago invalido.');
+        }
+
+        $comprobantesValidos = ['ticket', 'factura', 'ccf'];
+        if (!in_array($tipoComprobante, $comprobantesValidos, true)) {
+            throw new RuntimeException('Tipo de comprobante invalido.');
+        }
+
+        $nombreCliente = trim((string) $nombreCliente);
+        $nitCliente    = trim((string) $nitCliente);
+
+        if (in_array($tipoComprobante, self::COMPROBANTES_FISCALES, true) && ($nombreCliente === '' || $nitCliente === '')) {
+            throw new RuntimeException('Para factura o CCF debes indicar el nombre y el NIT/NRC del cliente.');
         }
 
         $conexion = Database::obtenerConexion();
         $lineas   = [];
         $total    = 0.0;
 
+        // Consolida cantidades repetidas del mismo producto antes de
+        // validar stock (el carrito nunca deberia mandar duplicados, pero
+        // el servidor no confia en eso).
+        $cantidadesPorProducto = [];
         foreach ($carrito as $item) {
-            $producto = Producto::obtenerPorId($conexion, (int) $item['id_producto']);
+            $idProducto = (int) ($item['id_producto'] ?? 0);
+            if ($idProducto <= 0) {
+                continue;
+            }
+            $cantidadesPorProducto[$idProducto] = ($cantidadesPorProducto[$idProducto] ?? 0) + max(1, (int) ($item['cantidad'] ?? 0));
+        }
+
+        foreach ($cantidadesPorProducto as $idProducto => $cantidad) {
+            $producto = Producto::obtenerPorId($conexion, $idProducto);
             if ($producto === null) {
                 continue;
             }
-            $cantidad = max(1, (int) $item['cantidad']);
             if ($cantidad > (int) $producto['stock']) {
-                throw new RuntimeException('No hay stock suficiente de "' . $producto['nombre'] . '".');
+                throw new RuntimeException(sprintf(
+                    'No hay stock suficiente de "%s" (disponible: %d, solicitado: %d).',
+                    $producto['nombre'],
+                    (int) $producto['stock'],
+                    $cantidad
+                ));
             }
             $subtotal = round($producto['precio'] * $cantidad, 2);
             $total   += $subtotal;
@@ -74,7 +115,15 @@ class TiendaController
 
         $conexion->beginTransaction();
         try {
-            $idVenta = Venta::crear($conexion, $idTurno, $tipoComprobante, $metodoPago, round($total, 2));
+            $idVenta = Venta::crear(
+                $conexion,
+                $idTurno,
+                $tipoComprobante,
+                $metodoPago,
+                round($total, 2),
+                $nombreCliente !== '' ? $nombreCliente : null,
+                $nitCliente !== '' ? $nitCliente : null
+            );
             foreach ($lineas as $linea) {
                 DetalleVentaTienda::crear($conexion, $idVenta, $linea['id_producto'], $linea['cantidad'], $linea['precio'], $linea['subtotal']);
                 Producto::descontarStock($conexion, $linea['id_producto'], $linea['cantidad']);
@@ -85,6 +134,16 @@ class TiendaController
             throw $e;
         }
 
-        return ['id_venta' => $idVenta, 'total' => round($total, 2), 'lineas' => $lineas];
+        return [
+            'id_venta'           => $idVenta,
+            'numero_comprobante' => Venta::formatearNumeroComprobante($tipoComprobante, $idVenta),
+            'tipo_comprobante'   => $tipoComprobante,
+            'metodo_pago'        => $metodoPago,
+            'nombre_cliente'     => $nombreCliente !== '' ? $nombreCliente : null,
+            'nit_cliente'        => $nitCliente !== '' ? $nitCliente : null,
+            'fecha'              => date('Y-m-d H:i:s'),
+            'total'              => round($total, 2),
+            'lineas'             => $lineas,
+        ];
     }
 }

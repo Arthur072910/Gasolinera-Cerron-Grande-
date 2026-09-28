@@ -60,6 +60,13 @@ $historial = PrecioController::historialPrecios();
         (<code>fecha_fin_vigencia</code>) y queda registrado en el historial de auditoria.
     </p>
 
+    <?php if (count($historial) > 1): ?>
+    <div class="pr-bloque">
+        <div class="pr-bloque__titulo">Tendencia de precios</div>
+        <div class="pr-grafica"><canvas id="pr-grafica-tendencia"></canvas></div>
+    </div>
+    <?php endif; ?>
+
     <div class="pr-historial">
         <div class="pr-historial__titulo">Historial de precios (auditoria)</div>
         <div class="pr-tabla-wrap">
@@ -113,6 +120,11 @@ $historial = PrecioController::historialPrecios();
     </div>
 </div>
 
+<script>
+    window.DATOS_PRECIOS = <?= json_encode(array_reverse($historial)) ?>;
+</script>
 <script src="assets/js/vendor/sweetalert2.min.js"></script>
+<script src="assets/js/vendor/chart.umd.min.js"></script>
+<script src="assets/js/graficas-tema.js"></script>
 <script src="assets/js/precios.js"></script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

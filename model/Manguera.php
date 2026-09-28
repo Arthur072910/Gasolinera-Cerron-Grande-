@@ -29,7 +29,7 @@ class Manguera
      */
     public static function obtenerParaDespacho(PDO $conexion, int $idManguera): ?array
     {
-        $sql = "SELECT m.id_manguera, m.id_bomba, m.contador_acumulado, t.tipo_combustible,
+        $sql = "SELECT m.id_manguera, m.id_bomba, m.id_tanque, m.contador_acumulado, t.tipo_combustible,
                        b.estado AS estado_bomba,
                        p.precio_por_galon
                 FROM mangueras m
