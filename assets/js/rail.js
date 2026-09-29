@@ -43,3 +43,23 @@
 
     window.addEventListener('resize', () => moverA(lista.querySelector('.rail__key.activo'), false));
 })();
+
+/**
+ * Manija para ocultar/mostrar el sidebar (solo vistas de POS, ver
+ * $railColapsable en view/layout/header.php). El estado se recuerda en
+ * localStorage porque estas pantallas se recargan por completo despues
+ * de cada venta/despacho, y no tendria sentido que el rail reaparezca
+ * cada vez que el cajero/despachador acaba de ocultarlo.
+ */
+(function () {
+    const manija = document.getElementById('rail-manija');
+    const shell = document.querySelector('.app-shell');
+    if (!manija || !shell) return;
+
+    manija.addEventListener('click', () => {
+        const oculto = shell.classList.toggle('app-shell--rail-oculto');
+        try {
+            localStorage.setItem('pos_rail_oculto', oculto ? '1' : '0');
+        } catch (error) { /* localStorage no disponible: el estado no se recuerda, no es grave */ }
+    });
+})();

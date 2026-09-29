@@ -38,6 +38,25 @@
   position: relative;
 }
 
+/* Sin esto, el rail (grid item) se estira al alto de .main por el
+   "stretch" por defecto del grid: en una vista larga (bitacora,
+   reportes...) el sidebar terminaba tan alto como toda la pagina, con
+   "Cerrar sesion" empujado bien abajo por el justify-content:
+   space-between. Fijo (sticky) y a la altura del viewport, se queda
+   siempre a la vista mientras .main scrollea. Solo en escritorio: en
+   movil el rail es la barra superior (ver @media en style.css) y ahi
+   no debe tomar el alto de la pantalla completa. */
+@media (min-width: 781px) {
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    align-self: start;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
 .rail::after {
   content: '';
   position: absolute;
@@ -254,6 +273,60 @@
   border-color: rgba(235, 90, 40, 0.5);
   color: var(--rail-naranja);
   background: rgba(235, 90, 40, 0.07);
+}
+
+/* ---- Manija para ocultar/mostrar el sidebar (solo vistas de POS) ---- */
+
+/* Una sola curva y duracion para las 3 piezas que se mueven a la vez
+   (columna del grid, contenido del rail, manija), para que se sientan
+   como un solo movimiento en vez de 3 animaciones desincronizadas. */
+:root { --rail-anim: 0.34s cubic-bezier(0.16, 1, 0.3, 1); }
+
+.rail { transition: transform var(--rail-anim), opacity 0.22s ease; }
+
+/* Envuelto en min-width para no pisar nunca el layout apilado de
+   movil (style.css ya pone .app-shell en 1 columna ahi); la manija
+   esta oculta en movil, pero esto cubre el caso de que alguien haya
+   guardado la preferencia en escritorio y luego achique la ventana
+   sin recargar. */
+@media (min-width: 781px) {
+  .app-shell { transition: grid-template-columns var(--rail-anim); }
+
+  .app-shell--rail-oculto { grid-template-columns: 0 1fr; }
+  .app-shell--rail-oculto .rail {
+    transform: translateX(-16px);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.rail__manija {
+  position: fixed;
+  top: 50%;
+  left: var(--rail-ancho);
+  transform: translate(-50%, -50%);
+  z-index: 40;
+  width: 26px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rail-borde);
+  border-radius: 6px;
+  background: var(--rail-panel);
+  color: var(--rail-texto-muted);
+  cursor: pointer;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  transition: left var(--rail-anim), color 0.15s ease, border-color 0.15s ease;
+}
+.rail__manija:hover { color: var(--rail-texto); border-color: rgba(235, 90, 40, 0.5); }
+.rail__manija svg { transition: transform var(--rail-anim); }
+
+.app-shell--rail-oculto .rail__manija { left: 0; }
+.app-shell--rail-oculto .rail__manija svg { transform: rotate(180deg); }
+
+@media (max-width: 780px) {
+  .rail__manija { display: none; }
 }
 
 /* ---- Responsive: el rail se convierte en barra superior ---- */

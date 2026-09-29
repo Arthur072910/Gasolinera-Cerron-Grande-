@@ -44,6 +44,17 @@ class DespachoController
      */
     public static function procesarDespacho(int $idManguera, string $modalidad, float $valorEntrada, string $metodoPago, int $idTurno): array
     {
+        $metodosValidos = ['efectivo', 'tarjeta', 'mixto'];
+        if (!in_array($metodoPago, $metodosValidos, true)) {
+            throw new RuntimeException('Metodo de pago invalido.');
+        }
+        if ($valorEntrada <= 0) {
+            throw new RuntimeException('El monto o los galones deben ser mayores a cero.');
+        }
+        if ($valorEntrada > 10000) {
+            throw new RuntimeException('Ese valor parece un error de digitacion.');
+        }
+
         $conexion = Database::obtenerConexion();
         $manguera = Manguera::obtenerParaDespacho($conexion, $idManguera);
 
@@ -86,11 +97,14 @@ class DespachoController
         }
 
         return [
-            'id_venta'    => $idVenta,
-            'combustible' => ucfirst($manguera['tipo_combustible']),
-            'galones'     => $galones,
-            'precio'      => $precio,
-            'total'       => $monto,
+            'id_venta'           => $idVenta,
+            'numero_comprobante' => Venta::formatearNumeroComprobante('ticket', $idVenta),
+            'combustible'        => ucfirst($manguera['tipo_combustible']),
+            'galones'            => $galones,
+            'precio'             => $precio,
+            'metodo_pago'        => $metodoPago,
+            'fecha'              => date('Y-m-d H:i:s'),
+            'total'              => $monto,
         ];
     }
 }

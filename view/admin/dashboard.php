@@ -45,6 +45,7 @@ $etiquetaTanque = [
             <a href="index.php?vista=proveedores">Proveedores</a>
             <a href="index.php?vista=asistencia">Asistencia</a>
             <a href="index.php?vista=reportes">Reportes</a>
+            <a href="index.php?vista=bitacora">Bitacora</a>
         </nav>
     </div>
 

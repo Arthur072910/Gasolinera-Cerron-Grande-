@@ -2,8 +2,8 @@
 /**
  * Controlador: Turnos y Cajas
  * Gestiona apertura/cierre de caja de 8 horas para Cajero y Despachador.
- * Un turno se abre automaticamente la primera vez que el usuario entra
- * a su pantalla de POS del dia, y se cierra explicitamente desde
+ * La apertura es explicita (el usuario cuenta y declara el fondo que
+ * recibe, ver abrirCaja()) y el cierre tambien lo es, desde
  * cierre_caja.php / cierre_turno.php.
  */
 require_once __DIR__ . '/../config/database.php';
@@ -18,43 +18,11 @@ class TurnoController
     private const MONTO_INICIAL_MAXIMO  = 2000.00;
 
     /**
-     * Devuelve el turno abierto del usuario actual; si no existe, lo
-     * abre (y, para caja de pista, toma la lectura inicial de cada
-     * manguera activa).
-     *
-     * Usado por despachador (pista), donde el fondo inicial todavia es
-     * un monto fijo asignado por politica. Para cajero de tienda, ver
-     * obtenerTurnoAbierto() / abrirCaja(): ahi la apertura es un paso
-     * explicito porque el cajero declara el fondo que recibe.
-     */
-    public static function obtenerOAbrirTurnoActivo(string $tipoCaja): array
-    {
-        $conexion   = Database::obtenerConexion();
-        $idUsuario  = Sesion::idUsuarioActual();
-
-        $turno = Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario);
-
-        if ($turno === null) {
-            $idTurno = Turno::abrir($conexion, Sesion::idAsistenciaActual(), $tipoCaja, self::MONTO_INICIAL_DEFECTO);
-
-            if ($tipoCaja === 'pista') {
-                foreach (Manguera::obtenerActivas($conexion) as $idManguera) {
-                    $contadorInicial = Manguera::obtenerContadorActual($conexion, (int) $idManguera);
-                    LecturaTurno::abrirParaTurno($conexion, $idTurno, (int) $idManguera, $contadorInicial);
-                }
-            }
-
-            $turno = Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario);
-        }
-
-        return self::formatearTurno($turno);
-    }
-
-    /**
-     * Version de solo lectura: NUNCA abre un turno. Para cajero de
-     * tienda, donde la apertura de caja debe ser un paso explicito
-     * (el cajero declara cuanto fondo recibe, no siempre es el mismo
-     * monto), en vez de crearse en silencio con un valor fijo.
+     * Version de solo lectura: NUNCA abre un turno. Tanto cajero como
+     * despachador deben abrir su caja explicitamente (ver abrirCaja())
+     * declarando el fondo que reciben, en vez de que el sistema cree
+     * uno en silencio con un valor fijo la primera vez que entran a su
+     * pantalla de POS.
      */
     public static function obtenerTurnoAbierto(string $tipoCaja): ?array
     {
@@ -70,10 +38,13 @@ class TurnoController
     }
 
     /**
-     * Apertura explicita de caja de tienda: el cajero cuenta y declara
-     * el fondo que recibe (por defecto se sugiere el monto de politica,
-     * pero puede ser distinto: por ejemplo si el turno anterior dejo un
-     * sobrante o el administrador asigno otro monto).
+     * Apertura explicita de caja/turno: el cajero o despachador cuenta y
+     * declara el fondo que recibe (por defecto se sugiere el monto de
+     * politica, pero puede ser distinto: por ejemplo si el turno
+     * anterior dejo un sobrante o el administrador asigno otro monto).
+     * Para caja de pista, ademas toma la lectura inicial (fotografia del
+     * totalizador) de cada manguera activa, igual que hacia la apertura
+     * automatica anterior.
      */
     public static function abrirCaja(string $tipoCaja, float $montoInicial): array
     {
@@ -90,7 +61,14 @@ class TurnoController
             throw new RuntimeException('Ese fondo inicial parece un error de digitacion.');
         }
 
-        Turno::abrir($conexion, Sesion::idAsistenciaActual(), $tipoCaja, $montoInicial);
+        $idTurno = Turno::abrir($conexion, Sesion::idAsistenciaActual(), $tipoCaja, $montoInicial);
+
+        if ($tipoCaja === 'pista') {
+            foreach (Manguera::obtenerActivas($conexion) as $idManguera) {
+                $contadorInicial = Manguera::obtenerContadorActual($conexion, (int) $idManguera);
+                LecturaTurno::abrirParaTurno($conexion, $idTurno, (int) $idManguera, $contadorInicial);
+            }
+        }
 
         return self::formatearTurno(Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario));
     }
@@ -172,12 +150,13 @@ class TurnoController
     }
 
     /**
-     * Resumen completo para la pantalla de conciliacion de caja de tienda:
-     * separa el efectivo (lo unico que realmente esta fisicamente en la
-     * gaveta) del resto de metodos de pago, para que la diferencia se
-     * calcule contra lo que el cajero de verdad deberia tener en mano
-     * (fondo inicial + ventas en efectivo), no contra el total de ventas
-     * (que incluye tarjeta/mixto, dinero que nunca paso por la caja).
+     * Resumen completo para la pantalla de conciliacion (cierre_caja de
+     * tienda o cierre_turno de pista): separa el efectivo (lo unico que
+     * realmente esta fisicamente en la gaveta) del resto de metodos de
+     * pago, para que la diferencia se calcule contra lo que el usuario
+     * de verdad deberia tener en mano (fondo inicial + ventas en
+     * efectivo), no contra el total de ventas (que incluye
+     * tarjeta/mixto, dinero que nunca paso por la caja).
      */
     public static function obtenerResumenCierre(string $tipoCaja): ?array
     {
@@ -212,10 +191,10 @@ class TurnoController
     }
 
     /**
-     * Historial de cuadres de caja ya cerrados del usuario actual, para
-     * que el propio cajero pueda revisar sus cierres anteriores (fecha,
-     * monto declarado, diferencia) sin depender de Reportes/Asistencia
-     * de administrador.
+     * Historial de cuadres ya cerrados del usuario actual (cajero o
+     * despachador), para que pueda revisar sus cierres anteriores
+     * (fecha, monto declarado, diferencia) sin depender de
+     * Reportes/Asistencia de administrador.
      */
     public static function obtenerHistorialCierres(string $tipoCaja, int $limite = 15): array
     {

@@ -34,9 +34,7 @@ body { background: var(--pg-void); }
 
 .main {
   background:
-    radial-gradient(circle at 15% 0%, rgba(235, 90, 40, 0.08), transparent 40%),
-    repeating-linear-gradient(0deg, rgba(150, 152, 154, 0.035) 0, rgba(150, 152, 154, 0.035) 1px, transparent 1px, transparent 36px),
-    repeating-linear-gradient(90deg, rgba(150, 152, 154, 0.035) 0, rgba(150, 152, 154, 0.035) 1px, transparent 1px, transparent 36px),
+    radial-gradient(circle at 15% 0%, rgba(235, 90, 40, 0.10), transparent 45%),
     var(--pg-void);
   min-height: 100vh;
 }

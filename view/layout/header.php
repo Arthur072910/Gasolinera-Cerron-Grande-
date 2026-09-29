@@ -8,6 +8,10 @@
  */
 $rol = Sesion::rolActual();
 $vistaActiva = $vistaActiva ?? '';
+// El sidebar se puede ocultar solo en las pantallas de POS (venta en
+// tienda / despacho en pista): son las que se recargan a cada rato
+// (cada venta, cada despacho) y donde mas se aprovecha el ancho extra.
+$railColapsable = in_array($vistaActiva, ['pos_tienda', 'pos_pista'], true);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -27,6 +31,23 @@ $railPartesNombre = preg_split('/\s+/', trim($railNombreActual));
 $railIniciales = mb_strtoupper(mb_substr($railPartesNombre[0], 0, 1)) . (count($railPartesNombre) > 1 ? mb_strtoupper(mb_substr(end($railPartesNombre), 0, 1)) : '');
 ?>
 <div class="app-shell">
+    <?php if ($railColapsable): ?>
+    <script>
+        // Se aplica de inmediato (antes de pintar el rail) para no ver un
+        // parpadeo del sidebar completo si ya estaba oculto por eleccion
+        // del usuario en una carga anterior.
+        (function () {
+            try {
+                if (localStorage.getItem('pos_rail_oculto') === '1') {
+                    document.currentScript.parentElement.classList.add('app-shell--rail-oculto');
+                }
+            } catch (error) { /* localStorage no disponible: se queda visible */ }
+        })();
+    </script>
+    <button class="rail__manija" id="rail-manija" type="button" aria-label="Mostrar u ocultar el menu" title="Mostrar/ocultar menu">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>
+    </button>
+    <?php endif; ?>
     <nav class="rail">
         <div>
             <div class="rail__marca">
@@ -53,6 +74,7 @@ $railIniciales = mb_strtoupper(mb_substr($railPartesNombre[0], 0, 1)) . (count($
                     <li><a class="rail__key <?= $vistaActiva === 'usuarios' ? 'activo' : '' ?>" href="index.php?vista=usuarios"><span class="num">6</span> Usuarios</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'asistencia' ? 'activo' : '' ?>" href="index.php?vista=asistencia"><span class="num">7</span> Asistencia</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'reportes' ? 'activo' : '' ?>" href="index.php?vista=reportes"><span class="num">8</span> Reportes</a></li>
+                    <li><a class="rail__key <?= $vistaActiva === 'bitacora' ? 'activo' : '' ?>" href="index.php?vista=bitacora"><span class="num">9</span> Bitacora</a></li>
                 <?php elseif ($rol === 'cajero'): ?>
                     <li><a class="rail__key <?= $vistaActiva === 'pos_tienda' ? 'activo' : '' ?>" href="index.php?vista=pos_tienda"><span class="num">1</span> Venta en tienda</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'cierre_caja' ? 'activo' : '' ?>" href="index.php?vista=cierre_caja"><span class="num">2</span> Cierre de caja</a></li>

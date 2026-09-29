@@ -21,6 +21,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/session.php';
 require_once __DIR__ . '/controller/AuthController.php';
+require_once __DIR__ . '/controller/BitacoraController.php';
 
 // ---------------- Acciones (formularios que cambian estado) ----------------
 $accion = $_GET['accion'] ?? null;
@@ -28,6 +29,7 @@ $accion = $_GET['accion'] ?? null;
 if ($accion === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pin = trim($_POST['pin'] ?? '');
     if (AuthController::intentarIngreso($pin)) {
+        BitacoraController::registrar('login', 'Inicio de sesion en el sistema.');
         header('Location: index.php');
         exit;
     }
@@ -35,6 +37,7 @@ if ($accion === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($accion === 'logout') {
+    BitacoraController::registrar('logout', 'Cierre de sesion.');
     AuthController::cerrarSesion();
     header('Location: index.php');
     exit;
@@ -44,13 +47,20 @@ if ($accion === 'logout') {
  * Ejecuta una accion protegida por rol: valida sesion/rol, corre el
  * callback dentro de un try/catch generico y redirige a $vistaVuelta
  * dejando un mensaje flash (exito o el error de negocio lanzado).
+ * Toda accion que pasa por aqui queda registrada en la bitacora
+ * automaticamente (solo si tuvo exito; los errores no se auditan como
+ * actividad realizada, solo quedan en el flash de la propia vista).
  */
 function ejecutarAccion(array $rolesPermitidos, string $vistaVuelta, callable $callback): void
 {
+    global $accion;
+
     Sesion::requerirRol($rolesPermitidos);
     try {
         $mensaje = $callback();
-        Sesion::flash('ok', $mensaje ?: 'Operacion realizada correctamente.');
+        $mensaje = $mensaje ?: 'Operacion realizada correctamente.';
+        Sesion::flash('ok', $mensaje);
+        BitacoraController::registrar((string) $accion, $mensaje);
     } catch (RuntimeException $e) {
         Sesion::flash('error', $e->getMessage());
     } catch (Throwable $e) {
@@ -60,11 +70,22 @@ function ejecutarAccion(array $rolesPermitidos, string $vistaVuelta, callable $c
     exit;
 }
 
+if ($accion === 'abrir_turno_pista' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/TurnoController.php';
+    ejecutarAccion(['despachador'], 'pos_pista', function () {
+        $turno = TurnoController::abrirCaja('pista', (float) ($_POST['monto_inicial'] ?? 0));
+        return sprintf('Turno abierto con fondo inicial de $%.2f.', $turno['monto_inicial']);
+    });
+}
+
 if ($accion === 'despacho' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/controller/DespachoController.php';
     require_once __DIR__ . '/controller/TurnoController.php';
     ejecutarAccion(['despachador'], 'pos_pista', function () {
-        $turno = TurnoController::obtenerOAbrirTurnoActivo('pista');
+        $turno = TurnoController::obtenerTurnoAbierto('pista');
+        if ($turno === null) {
+            throw new RuntimeException('Primero debes abrir tu turno antes de despachar.');
+        }
         $resultado = DespachoController::procesarDespacho(
             (int) ($_POST['id_manguera'] ?? 0),
             (string) ($_POST['modalidad'] ?? 'monto'),
@@ -72,9 +93,17 @@ if ($accion === 'despacho' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             (string) ($_POST['metodo_pago'] ?? 'efectivo'),
             $turno['id_turno']
         );
+
+        $recibido = $resultado['metodo_pago'] === 'efectivo' ? (float) ($_POST['monto_recibido'] ?? 0) : null;
+        Sesion::guardarUltimoTicket($resultado + [
+            'usuario'  => Sesion::nombreActual(),
+            'recibido' => $recibido,
+            'cambio'   => $recibido !== null ? round($recibido - $resultado['total'], 2) : null,
+        ]);
+
         return sprintf(
-            'Despacho registrado: %s %.3f gal por $%.2f (comprobante #%d).',
-            $resultado['combustible'], $resultado['galones'], $resultado['total'], $resultado['id_venta']
+            'Despacho registrado: %s %.3f gal por $%.2f (comprobante #%s).',
+            $resultado['combustible'], $resultado['galones'], $resultado['total'], $resultado['numero_comprobante']
         );
     });
 }
@@ -409,6 +438,7 @@ $rutasPermitidas = [
         'usuarios'    => '/view/admin/usuarios.php',
         'asistencia'  => '/view/admin/asistencia.php',
         'reportes'    => '/view/admin/reportes.php',
+        'bitacora'    => '/view/admin/bitacora.php',
     ],
     'cajero' => [
         'pos_tienda'  => '/view/cajero/pos_tienda.php',
