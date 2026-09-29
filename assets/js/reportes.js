@@ -2,9 +2,9 @@
  * reportes.js
  * -----------------------------------------------------------------------
  * Vista de solo lectura salvo por las exportaciones (enlaces reales a
- * index.php?accion=reporte_pdf / reporte_csv, que responden con el
+ * index.php?accion=reporte_pdf / reporte_excel, que responden con el
  * archivo). Aqui solo se muestra un toast breve de "generando..." al
- * hacer clic (mPDF puede tardar un segundo) y el aviso del flash con
+ * hacer clic (mPDF/PhpSpreadsheet pueden tardar un segundo) y el aviso del flash con
  * SweetAlert2, igual que el resto de vistas migradas.
  * -----------------------------------------------------------------------
  */
@@ -47,7 +47,7 @@
         const btnPdf = document.getElementById('rp-btn-pdf');
         const btnCsv = document.getElementById('rp-btn-csv');
         if (btnPdf) btnPdf.addEventListener('click', () => avisarGenerando('PDF'));
-        if (btnCsv) btnCsv.addEventListener('click', () => avisarGenerando('CSV'));
+        if (btnCsv) btnCsv.addEventListener('click', () => avisarGenerando('Excel'));
     } catch (error) {
         console.error('[reportes.js] No se pudo mostrar el aviso:', error);
     }

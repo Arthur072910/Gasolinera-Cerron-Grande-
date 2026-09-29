@@ -47,13 +47,24 @@ class DetalleVentaCombustible
 
     public static function resumenPorCombustibleHoy(PDO $conexion): array
     {
+        // La fecha se filtra ANTES de unir con mangueras/tanques (subconsulta),
+        // no en la condicion del ultimo LEFT JOIN: con el filtro ahi, una
+        // venta de ayer sin coincidir con CURDATE() solo anulaba las
+        // columnas de `v`, pero la fila de `d` (galones/subtotal) ya
+        // habia quedado unida por manguera sin importar la fecha, y se
+        // sumaba igual. Esa es la causa de que ventas de dias anteriores
+        // aparecieran en el resumen de "hoy".
         $sql = "SELECT t.tipo_combustible AS combustible,
-                       COALESCE(SUM(d.galones_despachados), 0) AS galones,
-                       COALESCE(SUM(d.subtotal), 0) AS total
+                       COALESCE(SUM(x.galones_despachados), 0) AS galones,
+                       COALESCE(SUM(x.subtotal), 0) AS total
                 FROM mangueras m
                 JOIN tanques t ON t.id_tanque = m.id_tanque
-                LEFT JOIN detalle_ventas_combustible d ON d.id_manguera = m.id_manguera
-                LEFT JOIN ventas v ON v.id_venta = d.id_venta AND DATE(v.fecha_hora) = CURDATE()
+                LEFT JOIN (
+                    SELECT d.id_manguera, d.galones_despachados, d.subtotal
+                    FROM detalle_ventas_combustible d
+                    JOIN ventas v ON v.id_venta = d.id_venta
+                    WHERE DATE(v.fecha_hora) = CURDATE()
+                ) x ON x.id_manguera = m.id_manguera
                 GROUP BY t.tipo_combustible
                 ORDER BY t.tipo_combustible";
         $filas = $conexion->query($sql)->fetchAll();

@@ -7,12 +7,8 @@ $subtituloPagina = 'Caja central &middot; tienda de conveniencia';
 $vistaActiva     = 'pos_tienda';
 require __DIR__ . '/../layout/header.php';
 
-$categorias   = TiendaController::categorias();
-$productos    = TiendaController::productos();
-$metodosPago  = TiendaController::metodosPago();
-$comprobantes = TiendaController::tiposComprobante();
-$turno        = TurnoController::obtenerOAbrirTurnoActivo('tienda');
-$ultimoTicket = Sesion::leerUltimoTicket();
+$turno        = TurnoController::obtenerTurnoAbierto('tienda');
+$ultimoTicket = null;
 ?>
 <link rel="stylesheet" href="assets/css/pos_tienda.css">
 
@@ -21,6 +17,33 @@ $ultimoTicket = Sesion::leerUltimoTicket();
     <span class="pt-page__esquina pt-page__esquina--tr"></span>
     <span class="pt-page__esquina pt-page__esquina--bl"></span>
     <span class="pt-page__esquina pt-page__esquina--br"></span>
+
+    <?php if ($turno === null): ?>
+    <div class="pt-apertura">
+        <div class="pt-apertura__icono">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        </div>
+        <h2 class="pt-apertura__titulo">Apertura de caja</h2>
+        <p class="pt-apertura__texto">Antes de empezar a cobrar, cuenta el efectivo que recibes como fondo de caja y confirma el monto. Este es el punto de partida para conciliar tu caja al cerrar el turno.</p>
+
+        <form class="pt-apertura__form" method="post" action="index.php?accion=abrir_caja" id="form-abrir-caja">
+            <label for="monto_inicial">Fondo inicial recibido</label>
+            <div class="pt-apertura__campo">
+                <span>$</span>
+                <input type="text" name="monto_inicial" id="monto_inicial" inputmode="decimal"
+                       value="<?= number_format(TurnoController::montoInicialSugerido(), 2, '.', '') ?>" autocomplete="off" required>
+            </div>
+            <p class="pt-apertura__sugerencia">Sugerido por politica: $<?= number_format(TurnoController::montoInicialSugerido(), 2) ?>. Cambialo si el fondo que recibiste es distinto.</p>
+            <button class="pt-btn-cobrar" type="submit">Abrir caja y empezar a vender</button>
+        </form>
+    </div>
+    <?php else:
+    $categorias   = TiendaController::categorias();
+    $productos    = TiendaController::productos();
+    $metodosPago  = TiendaController::metodosPago();
+    $comprobantes = TiendaController::tiposComprobante();
+    $ultimoTicket = Sesion::leerUltimoTicket();
+    ?>
 
     <div class="pt-turno">
         <div class="pt-turno__bloque">
@@ -151,6 +174,7 @@ $ultimoTicket = Sesion::leerUltimoTicket();
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <script>

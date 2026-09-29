@@ -104,4 +104,26 @@ class Turno
         $stmt->execute([':id_turno' => $idTurno]);
         return (float) $stmt->fetchColumn();
     }
+
+    /**
+     * Cierres anteriores de un usuario para su propia consulta (cajero
+     * viendo su historial de cuadres de caja). Incluye ya el desglose de
+     * efectivo por turno para no tener que consultar turno por turno.
+     */
+    public static function obtenerHistorialCerradosPorUsuario(PDO $conexion, int $idUsuario, string $tipoCaja, int $limite = 15): array
+    {
+        $sql = "SELECT t.id_turno, t.fecha_inicio, t.fecha_fin, t.monto_inicial, t.monto_declarado,
+                       COALESCE(SUM(CASE WHEN v.metodo_pago = 'efectivo' THEN v.monto_total ELSE 0 END), 0) AS ventas_efectivo,
+                       COALESCE(SUM(v.monto_total), 0) AS total_turno
+                FROM turnos t
+                JOIN asistencia a ON a.id_asistencia = t.id_asistencia
+                LEFT JOIN ventas v ON v.id_turno = t.id_turno
+                WHERE a.id_usuario = :id_usuario AND t.tipo_caja = :tipo_caja AND t.estado = 'cerrado'
+                GROUP BY t.id_turno, t.fecha_inicio, t.fecha_fin, t.monto_inicial, t.monto_declarado
+                ORDER BY t.fecha_fin DESC
+                LIMIT " . max(1, $limite);
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute([':id_usuario' => $idUsuario, ':tipo_caja' => $tipoCaja]);
+        return $stmt->fetchAll();
+    }
 }

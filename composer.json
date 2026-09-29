@@ -1,5 +1,7 @@
 {
     "require": {
-        "mpdf/mpdf": "^8.3"
+        "mpdf/mpdf": "^8.3",
+        "phpoffice/phpspreadsheet": "1.30.*",
+        "mpdf/psr-http-message-shim": "1.0.0"
     }
 }

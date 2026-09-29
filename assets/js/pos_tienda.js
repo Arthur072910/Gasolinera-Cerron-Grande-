@@ -43,6 +43,13 @@
         console.error('[pos_tienda.js] No se pudo mostrar el aviso:', error);
     }
 
+    // Pantalla de apertura de caja (sin turno abierto todavia): no existe
+    // grilla de productos ni carrito que conectar, asi que no hay nada
+    // mas que hacer aqui (el aviso de arriba ya se mostro).
+    if (!document.getElementById('form-venta-tienda')) {
+        return;
+    }
+
     const carrito = {}; // { idProducto: { nombre, precio, stock, cantidad } }
 
     // ---- Filtro por categoria + busqueda ----

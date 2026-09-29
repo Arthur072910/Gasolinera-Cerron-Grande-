@@ -220,6 +220,44 @@ body { background: var(--cc-void); }
 .cc-btn--primario:active { transform: translateY(1px); }
 .cc-btn--ancho { width: 100%; margin-top: 20px; }
 
+.cc-aclaracion {
+  margin: 12px 0 0;
+  font-size: 0.72rem;
+  color: var(--cc-texto-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ---- Historial de cierres anteriores ---- */
+
+.cc-historial {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--cc-borde);
+}
+
+.cc-historial__titulo {
+  font-family: var(--cc-f-display); font-weight: 600; font-size: 0.82rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--cc-texto-muted); margin-bottom: 12px;
+}
+
+.cc-historial__tabla-wrap { overflow-x: auto; }
+.cc-historial__tabla { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.cc-historial__tabla thead th {
+  text-align: left; font-family: var(--cc-f-display); font-weight: 600;
+  font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--cc-texto-muted); padding: 0 10px 10px; border-bottom: 1px solid var(--cc-borde);
+  white-space: nowrap;
+}
+.cc-historial__tabla tbody td {
+  padding: 10px; border-bottom: 1px solid rgba(150, 152, 154, 0.1);
+  color: var(--cc-texto); white-space: nowrap;
+}
+.cc-historial__tabla tbody tr:last-child td { border-bottom: none; }
+.cc-historial__tabla tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+.cc-historial__tabla .cc-diferencia { font-size: 0.82rem; }
+
 @media (max-width: 560px) {
   .cc-page { padding: 20px; }
   .cc-resumen { grid-template-columns: 1fr; }

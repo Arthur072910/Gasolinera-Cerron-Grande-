@@ -79,12 +79,23 @@ if ($accion === 'despacho' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 }
 
+if ($accion === 'abrir_caja' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/TurnoController.php';
+    ejecutarAccion(['cajero'], 'pos_tienda', function () {
+        $turno = TurnoController::abrirCaja('tienda', (float) ($_POST['monto_inicial'] ?? 0));
+        return sprintf('Caja abierta con fondo inicial de $%.2f.', $turno['monto_inicial']);
+    });
+}
+
 if ($accion === 'venta_tienda' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/controller/TiendaController.php';
     require_once __DIR__ . '/controller/TurnoController.php';
     ejecutarAccion(['cajero'], 'pos_tienda', function () {
         $carrito = json_decode($_POST['carrito'] ?? '[]', true) ?: [];
-        $turno = TurnoController::obtenerOAbrirTurnoActivo('tienda');
+        $turno = TurnoController::obtenerTurnoAbierto('tienda');
+        if ($turno === null) {
+            throw new RuntimeException('Primero debes abrir la caja antes de cobrar.');
+        }
         $resultado = TiendaController::procesarVenta(
             $carrito,
             (string) ($_POST['metodo_pago'] ?? 'efectivo'),
@@ -362,10 +373,10 @@ if ($accion === 'reporte_pdf' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-if ($accion === 'reporte_csv' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($accion === 'reporte_excel' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Sesion::requerirRol(['administrador']);
     require_once __DIR__ . '/controller/ReporteController.php';
-    ReporteController::generarCsv();
+    ReporteController::generarExcel();
     exit;
 }
 

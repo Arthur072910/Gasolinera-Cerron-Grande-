@@ -77,6 +77,57 @@ body { background: var(--pt-void); }
 .pt-page__esquina--bl { bottom: -6px; left: -6px; border-bottom: 2px solid; border-left: 2px solid; }
 .pt-page__esquina--br { bottom: -6px; right: -6px; border-bottom: 2px solid; border-right: 2px solid; }
 
+/* ---- Apertura de caja (sin turno abierto todavia) ---- */
+
+.pt-apertura {
+  max-width: 420px;
+  margin: 40px auto;
+  text-align: center;
+  background: linear-gradient(165deg, var(--pt-panel-alt), var(--pt-panel) 60%);
+  border: 1px solid var(--pt-borde);
+  border-radius: 8px;
+  padding: 32px 28px;
+  box-shadow: 0 20px 40px -28px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pt-apertura__icono {
+  width: 56px; height: 56px; margin: 0 auto 18px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(235, 90, 40, 0.35); border-radius: 50%;
+  background: linear-gradient(160deg, rgba(235, 90, 40, 0.16), rgba(235, 90, 40, 0.03));
+  color: var(--pt-naranja);
+}
+
+.pt-apertura__titulo {
+  font-family: var(--pt-f-display); font-weight: 700; font-size: 1.25rem;
+  text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 10px; color: var(--pt-texto);
+}
+
+.pt-apertura__texto {
+  font-size: 0.85rem; color: var(--pt-texto-muted); line-height: 1.6; margin: 0 0 22px;
+}
+
+.pt-apertura__form { text-align: left; }
+.pt-apertura__form label {
+  display: block; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--pt-texto-muted); margin-bottom: 8px;
+}
+
+.pt-apertura__campo {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--pt-borde); border-radius: 6px;
+  padding: 10px 14px; background: var(--pt-void);
+}
+.pt-apertura__campo span { color: var(--pt-texto-muted); font-family: var(--pt-f-display); font-weight: 700; }
+.pt-apertura__campo input {
+  flex: 1; border: none; outline: none; background: transparent;
+  color: var(--pt-texto); font-family: var(--pt-f-mono); font-size: 1.15rem; font-weight: 600;
+}
+
+.pt-apertura__sugerencia { font-size: 0.72rem; color: var(--pt-texto-muted); margin: 8px 0 0; }
+
+.pt-apertura .pt-btn-cobrar { margin-top: 20px; }
+
 /* ---- Barra de turno ---- */
 
 .pt-turno {

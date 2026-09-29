@@ -6,7 +6,13 @@ $subtituloPagina = 'Conciliacion de caja central / tienda';
 $vistaActiva     = 'cierre_caja';
 require __DIR__ . '/../layout/header.php';
 
-$resumen = TurnoController::obtenerResumenCierre('tienda');
+$resumen   = TurnoController::obtenerResumenCierre('tienda');
+$historial = TurnoController::obtenerHistorialCierres('tienda');
+// El turno que ya se muestra en detalle arriba (si esta cerrado) no se
+// repite en la lista de "cierres anteriores".
+if ($resumen !== null && $resumen['estado'] === 'cerrado') {
+    $historial = array_values(array_filter($historial, fn ($h) => $h['id_turno'] !== $resumen['id_turno']));
+}
 
 $nombresPago = ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'mixto' => 'Mixto'];
 ?>
@@ -100,7 +106,42 @@ $nombresPago = ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'mixto' => 'Mi
             </div>
 
             <button class="cc-btn cc-btn--primario cc-btn--ancho" type="submit" id="btn-confirmar-cierre">Confirmar cierre de caja</button>
+            <p class="cc-aclaracion">Esto solo cierra el cuadre de esta caja (el dinero). Tu asistencia del dia sigue activa: cuando termines tu jornada, cierra sesion desde el menu lateral.</p>
         </form>
+    <?php endif; ?>
+
+    <?php if (!empty($historial)): ?>
+    <div class="cc-historial">
+        <div class="cc-historial__titulo">Cierres anteriores</div>
+        <div class="cc-historial__tabla-wrap">
+            <table class="cc-historial__tabla">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Fondo</th>
+                        <th>Esperado</th>
+                        <th>Declarado</th>
+                        <th>Diferencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($historial as $h): ?>
+                    <tr>
+                        <td><?= htmlspecialchars(date('d/m/Y H:i', strtotime($h['fecha_fin']))) ?></td>
+                        <td>$<?= number_format($h['monto_inicial'], 2) ?></td>
+                        <td>$<?= number_format($h['efectivo_esperado'], 2) ?></td>
+                        <td>$<?= number_format($h['monto_declarado'], 2) ?></td>
+                        <td>
+                            <span class="cc-diferencia cc-diferencia--<?= $h['diferencia'] == 0 ? 'exacto' : ($h['diferencia'] > 0 ? 'sobra' : 'falta') ?>">
+                                <?= $h['diferencia'] > 0 ? '+' : '' ?>$<?= number_format($h['diferencia'], 2) ?>
+                            </span>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <?php endif; ?>
 
     <?php endif; ?>

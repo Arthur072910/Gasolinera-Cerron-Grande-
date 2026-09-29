@@ -15,11 +15,17 @@ require_once __DIR__ . '/../model/LecturaTurno.php';
 class TurnoController
 {
     private const MONTO_INICIAL_DEFECTO = 20.00;
+    private const MONTO_INICIAL_MAXIMO  = 2000.00;
 
     /**
      * Devuelve el turno abierto del usuario actual; si no existe, lo
      * abre (y, para caja de pista, toma la lectura inicial de cada
      * manguera activa).
+     *
+     * Usado por despachador (pista), donde el fondo inicial todavia es
+     * un monto fijo asignado por politica. Para cajero de tienda, ver
+     * obtenerTurnoAbierto() / abrirCaja(): ahi la apertura es un paso
+     * explicito porque el cajero declara el fondo que recibe.
      */
     public static function obtenerOAbrirTurnoActivo(string $tipoCaja): array
     {
@@ -41,6 +47,61 @@ class TurnoController
             $turno = Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario);
         }
 
+        return self::formatearTurno($turno);
+    }
+
+    /**
+     * Version de solo lectura: NUNCA abre un turno. Para cajero de
+     * tienda, donde la apertura de caja debe ser un paso explicito
+     * (el cajero declara cuanto fondo recibe, no siempre es el mismo
+     * monto), en vez de crearse en silencio con un valor fijo.
+     */
+    public static function obtenerTurnoAbierto(string $tipoCaja): ?array
+    {
+        $conexion  = Database::obtenerConexion();
+        $idUsuario = Sesion::idUsuarioActual();
+
+        $turno = Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario);
+        if ($turno === null || $turno['tipo_caja'] !== $tipoCaja) {
+            return null;
+        }
+
+        return self::formatearTurno($turno);
+    }
+
+    /**
+     * Apertura explicita de caja de tienda: el cajero cuenta y declara
+     * el fondo que recibe (por defecto se sugiere el monto de politica,
+     * pero puede ser distinto: por ejemplo si el turno anterior dejo un
+     * sobrante o el administrador asigno otro monto).
+     */
+    public static function abrirCaja(string $tipoCaja, float $montoInicial): array
+    {
+        $conexion  = Database::obtenerConexion();
+        $idUsuario = Sesion::idUsuarioActual();
+
+        if (Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario) !== null) {
+            throw new RuntimeException('Ya tienes una caja abierta.');
+        }
+        if ($montoInicial < 0) {
+            throw new RuntimeException('El fondo inicial no puede ser negativo.');
+        }
+        if ($montoInicial > self::MONTO_INICIAL_MAXIMO) {
+            throw new RuntimeException('Ese fondo inicial parece un error de digitacion.');
+        }
+
+        Turno::abrir($conexion, Sesion::idAsistenciaActual(), $tipoCaja, $montoInicial);
+
+        return self::formatearTurno(Turno::obtenerAbiertoPorUsuario($conexion, $idUsuario));
+    }
+
+    public static function montoInicialSugerido(): float
+    {
+        return self::MONTO_INICIAL_DEFECTO;
+    }
+
+    private static function formatearTurno(array $turno): array
+    {
         return [
             'id_turno'       => (int) $turno['id_turno'],
             'usuario'        => Sesion::nombreActual(),
@@ -148,5 +209,37 @@ class TurnoController
                 ? round($turnoBase['monto_declarado'] - $efectivoEsperado, 2)
                 : null,
         ];
+    }
+
+    /**
+     * Historial de cuadres de caja ya cerrados del usuario actual, para
+     * que el propio cajero pueda revisar sus cierres anteriores (fecha,
+     * monto declarado, diferencia) sin depender de Reportes/Asistencia
+     * de administrador.
+     */
+    public static function obtenerHistorialCierres(string $tipoCaja, int $limite = 15): array
+    {
+        $conexion  = Database::obtenerConexion();
+        $idUsuario = Sesion::idUsuarioActual();
+
+        $filas = Turno::obtenerHistorialCerradosPorUsuario($conexion, $idUsuario, $tipoCaja, $limite);
+
+        return array_map(function ($t) {
+            $montoInicial     = (float) $t['monto_inicial'];
+            $ventasEfectivo   = (float) $t['ventas_efectivo'];
+            $montoDeclarado   = $t['monto_declarado'] !== null ? (float) $t['monto_declarado'] : null;
+            $efectivoEsperado = round($montoInicial + $ventasEfectivo, 2);
+
+            return [
+                'id_turno'          => (int) $t['id_turno'],
+                'fecha_inicio'      => $t['fecha_inicio'],
+                'fecha_fin'         => $t['fecha_fin'],
+                'monto_inicial'     => $montoInicial,
+                'total_turno'       => (float) $t['total_turno'],
+                'efectivo_esperado' => $efectivoEsperado,
+                'monto_declarado'   => $montoDeclarado,
+                'diferencia'        => $montoDeclarado !== null ? round($montoDeclarado - $efectivoEsperado, 2) : null,
+            ];
+        }, $filas);
     }
 }
