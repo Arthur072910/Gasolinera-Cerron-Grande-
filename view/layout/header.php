@@ -75,6 +75,7 @@ $railIniciales = mb_strtoupper(mb_substr($railPartesNombre[0], 0, 1)) . (count($
                     <li><a class="rail__key <?= $vistaActiva === 'asistencia' ? 'activo' : '' ?>" href="index.php?vista=asistencia"><span class="num">7</span> Asistencia</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'reportes' ? 'activo' : '' ?>" href="index.php?vista=reportes"><span class="num">8</span> Reportes</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'bitacora' ? 'activo' : '' ?>" href="index.php?vista=bitacora"><span class="num">9</span> Bitacora</a></li>
+                    <li><a class="rail__key <?= $vistaActiva === 'respaldos' ? 'activo' : '' ?>" href="index.php?vista=respaldos"><span class="num">10</span> Respaldos</a></li>
                 <?php elseif ($rol === 'cajero'): ?>
                     <li><a class="rail__key <?= $vistaActiva === 'pos_tienda' ? 'activo' : '' ?>" href="index.php?vista=pos_tienda"><span class="num">1</span> Venta en tienda</a></li>
                     <li><a class="rail__key <?= $vistaActiva === 'cierre_caja' ? 'activo' : '' ?>" href="index.php?vista=cierre_caja"><span class="num">2</span> Cierre de caja</a></li>

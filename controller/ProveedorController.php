@@ -86,20 +86,34 @@ class ProveedorController
         }
 
         $conexion = Database::obtenerConexion();
-        $tanque   = Tanque::obtenerNivelCalculado($conexion, $idTanque);
-        $espacioLibre = $tanque['capacidad'] - $tanque['nivel_actual'];
 
-        if ($galonesMedidos > $espacioLibre) {
-            throw new RuntimeException(sprintf(
-                'Esa cantidad excede la capacidad libre del tanque (espacio disponible: %.1f gal).',
-                max(0, $espacioLibre)
-            ));
-        }
+        $conexion->beginTransaction();
+        try {
+            // Bloqueo de la fila del tanque antes de leer su nivel: sin
+            // esto, dos recepciones (o una recepcion y un despacho) del
+            // mismo tanque al mismo tiempo podrian leer el mismo "espacio
+            // libre" antes de que cualquiera confirme, y las dos pasar la
+            // validacion aunque juntas excedan la capacidad real.
+            Tanque::bloquearFila($conexion, $idTanque);
+            $tanque = Tanque::obtenerNivelCalculado($conexion, $idTanque);
+            $espacioLibre = $tanque['capacidad'] - $tanque['nivel_actual'];
 
-        RecepcionCisterna::crear($conexion, $idProveedor, $idTanque, trim($numeroFactura), $galonesFacturados, $galonesMedidos, $costoTotal);
+            if ($galonesMedidos > $espacioLibre) {
+                throw new RuntimeException(sprintf(
+                    'Esa cantidad excede la capacidad libre del tanque (espacio disponible: %.1f gal).',
+                    max(0, $espacioLibre)
+                ));
+            }
 
-        if ($nivelCmTrasDescarga !== null) {
-            LecturaTanque::registrar($conexion, $idTanque, $nivelCmTrasDescarga, $tanque['nivel_actual'] + $galonesMedidos);
+            RecepcionCisterna::crear($conexion, $idProveedor, $idTanque, trim($numeroFactura), $galonesFacturados, $galonesMedidos, $costoTotal);
+
+            if ($nivelCmTrasDescarga !== null) {
+                LecturaTanque::registrar($conexion, $idTanque, $nivelCmTrasDescarga, $tanque['nivel_actual'] + $galonesMedidos);
+            }
+            $conexion->commit();
+        } catch (Exception $e) {
+            $conexion->rollBack();
+            throw $e;
         }
     }
 

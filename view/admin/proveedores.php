@@ -115,6 +115,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
                             </button>
                             <form method="post" action="index.php?accion=proveedor_eliminar" class="pv-form-inline"
                                   data-nombre="<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
                                 <input type="hidden" name="id_proveedor" value="<?= $p['id'] ?>">
                                 <button class="pv-icon-btn pv-icon-btn--peligro" type="submit" title="Eliminar proveedor">
                                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -151,6 +152,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
         <?php endif; ?>
 
         <form id="pv-form" method="post" action="index.php?accion=proveedor_nuevo">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <input type="hidden" name="id_proveedor" id="pv-f-id">
             <div class="pv-campo">
                 <label for="pv-f-nombre">Nombre de la empresa</label>
@@ -196,6 +198,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
         <?php endif; ?>
 
         <form method="post" action="index.php?accion=recepcion_nueva">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <div class="pv-campo-grupo">
                 <div class="pv-campo">
                     <label for="r_proveedor">Proveedor</label>

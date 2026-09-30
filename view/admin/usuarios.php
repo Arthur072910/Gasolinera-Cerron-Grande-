@@ -125,6 +125,7 @@ function usr_iniciales(string $nombre): string
                             <form method="post" action="index.php?accion=usuario_estado" class="usr-form-inline"
                                   data-nombre="<?= htmlspecialchars($u['nombre'], ENT_QUOTES) ?>"
                                   data-nueva-accion="<?= $u['estado'] === 'activo' ? 'desactivar' : 'activar' ?>">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
                                 <input type="hidden" name="id_usuario" value="<?= $u['id_usuario'] ?>">
                                 <input type="hidden" name="estado" value="<?= $u['estado'] === 'activo' ? 'inactivo' : 'activo' ?>">
                                 <?php if ($u['estado'] === 'activo'): ?>
@@ -168,6 +169,7 @@ function usr_iniciales(string $nombre): string
         <?php endif; ?>
 
         <form id="usr-form" method="post" action="index.php?accion=usuario_nuevo">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <input type="hidden" name="id_usuario" id="usr-f-id">
 
             <div class="usr-campo">

@@ -26,6 +26,7 @@ $turno = TurnoController::obtenerTurnoAbierto('pista');
         <p class="pp-apertura__texto">Antes de empezar a despachar, cuenta el efectivo que recibes como fondo de caja y confirma el monto. Tambien se toma la lectura inicial de cada manguera activa, para poder conciliar el turno al cerrarlo.</p>
 
         <form class="pp-apertura__form" method="post" action="index.php?accion=abrir_turno_pista" id="form-abrir-turno">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <label for="monto_inicial">Fondo inicial recibido</label>
             <div class="pp-apertura__campo">
                 <span>$</span>
@@ -70,6 +71,7 @@ $turno = TurnoController::obtenerTurnoAbierto('pista');
     </div>
 
     <form id="form-despacho" method="post" action="index.php?accion=despacho">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
         <input type="hidden" name="id_manguera" id="input-id-manguera">
         <input type="hidden" name="modalidad" id="input-modalidad">
         <input type="hidden" name="valor_entrada" id="input-valor-entrada">

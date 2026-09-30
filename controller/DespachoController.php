@@ -76,17 +76,24 @@ class DespachoController
             throw new RuntimeException('El monto o los galones deben ser mayores a cero.');
         }
 
-        $tanque = Tanque::obtenerNivelCalculado($conexion, (int) $manguera['id_tanque']);
-        if ($galones > $tanque['nivel_actual']) {
-            throw new RuntimeException(sprintf(
-                'No hay suficiente combustible en el tanque (disponible: %.1f gal, solicitado: %.1f gal).',
-                $tanque['nivel_actual'],
-                $galones
-            ));
-        }
-
         $conexion->beginTransaction();
         try {
+            // El bloqueo de la fila del tanque va DENTRO de la transaccion
+            // y ANTES de leer el nivel: asi, si dos despachos de la misma
+            // manguera/tanque llegan al mismo tiempo, el segundo espera a
+            // que el primero termine (commit o rollback) antes de leer el
+            // nivel, en vez de que ambos lean "antes" del otro y los dos
+            // pasen la validacion de stock disponible.
+            Tanque::bloquearFila($conexion, (int) $manguera['id_tanque']);
+            $tanque = Tanque::obtenerNivelCalculado($conexion, (int) $manguera['id_tanque']);
+            if ($galones > $tanque['nivel_actual']) {
+                throw new RuntimeException(sprintf(
+                    'No hay suficiente combustible en el tanque (disponible: %.1f gal, solicitado: %.1f gal).',
+                    $tanque['nivel_actual'],
+                    $galones
+                ));
+            }
+
             $idVenta = Venta::crear($conexion, $idTurno, 'ticket', $metodoPago, $monto);
             DetalleVentaCombustible::crear($conexion, $idVenta, $idManguera, $galones, $precio, $monto);
             Manguera::incrementarContador($conexion, $idManguera, $galones);

@@ -95,4 +95,19 @@ class Tanque
             'capacidad'    => $fila ? (float) $fila['capacidad_galones'] : 0.0,
         ];
     }
+
+    /**
+     * Bloquea la fila del tanque (SELECT ... FOR UPDATE) dentro de una
+     * transaccion ya abierta. Sin esto, dos despachos o una recepcion y
+     * un despacho del MISMO tanque al mismo tiempo podrian leer el nivel
+     * "antes" el uno del otro y ambos pasar la validacion, dejando el
+     * tanque en negativo o por encima de su capacidad (condicion de
+     * carrera). Llamar siempre justo antes de obtenerNivelCalculado()
+     * cuando el resultado decide si una operacion es valida.
+     */
+    public static function bloquearFila(PDO $conexion, int $idTanque): void
+    {
+        $stmt = $conexion->prepare('SELECT id_tanque FROM tanques WHERE id_tanque = :id FOR UPDATE');
+        $stmt->execute([':id' => $idTanque]);
+    }
 }

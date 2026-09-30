@@ -97,6 +97,7 @@ $historial = PrecioController::historialPrecios();
         <div class="pr-modal__titulo" id="pr-modal-titulo">Nuevo precio vigente</div>
 
         <form method="post" action="index.php?accion=precio_nuevo">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <div class="pr-campo">
                 <label for="pr_combustible">Combustible</label>
                 <select name="combustible" id="pr_combustible">

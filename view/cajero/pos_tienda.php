@@ -27,6 +27,7 @@ $ultimoTicket = null;
         <p class="pt-apertura__texto">Antes de empezar a cobrar, cuenta el efectivo que recibes como fondo de caja y confirma el monto. Este es el punto de partida para conciliar tu caja al cerrar el turno.</p>
 
         <form class="pt-apertura__form" method="post" action="index.php?accion=abrir_caja" id="form-abrir-caja">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <label for="monto_inicial">Fondo inicial recibido</label>
             <div class="pt-apertura__campo">
                 <span>$</span>
@@ -65,6 +66,7 @@ $ultimoTicket = null;
     </div>
 
     <form id="form-venta-tienda" method="post" action="index.php?accion=venta_tienda">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
         <input type="hidden" name="carrito" id="input-carrito">
         <input type="hidden" name="metodo_pago" id="input-metodo-pago">
         <input type="hidden" name="tipo_comprobante" id="input-tipo-comprobante" value="ticket">

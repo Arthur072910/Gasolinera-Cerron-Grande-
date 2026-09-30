@@ -127,6 +127,7 @@ $nombresPago = ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'mixto' => 'Mi
         </div>
     <?php else: ?>
         <form class="ct-form" method="post" action="index.php?accion=cerrar_turno" id="form-cierre-turno">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <div class="ct-campo">
                 <label for="monto_entregado">Efectivo entregado (contado)</label>
                 <input type="text" name="monto_declarado" id="monto_entregado" inputmode="decimal" placeholder="0.00" autocomplete="off" required>

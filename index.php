@@ -26,14 +26,30 @@ require_once __DIR__ . '/controller/BitacoraController.php';
 // ---------------- Acciones (formularios que cambian estado) ----------------
 $accion = $_GET['accion'] ?? null;
 
-if ($accion === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pin = trim($_POST['pin'] ?? '');
-    if (AuthController::intentarIngreso($pin)) {
-        BitacoraController::registrar('login', 'Inicio de sesion en el sistema.');
-        header('Location: index.php');
-        exit;
+if ($accion === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST' && !Sesion::validarCsrf($_POST['csrf_token'] ?? null)) {
+    $errorLogin = 'El formulario expiro o se abrio hace mucho tiempo. Vuelve a intentar.';
+} elseif ($accion === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $segundosBloqueo = Sesion::segundosDeBloqueoRestantes();
+    if ($segundosBloqueo > 0) {
+        $errorLogin = sprintf(
+            'Demasiados intentos fallidos. Espera %d segundo%s antes de volver a intentar.',
+            $segundosBloqueo,
+            $segundosBloqueo === 1 ? '' : 's'
+        );
+    } else {
+        $pin = trim($_POST['pin'] ?? '');
+        if (AuthController::intentarIngreso($pin)) {
+            Sesion::reiniciarIntentosFallidos();
+            BitacoraController::registrar('login', 'Inicio de sesion en el sistema.');
+            header('Location: index.php');
+            exit;
+        }
+        Sesion::registrarIntentoFallido();
+        $restantes = Sesion::intentosRestantes();
+        $errorLogin = $restantes > 0
+            ? sprintf('PIN no reconocido. Intenta de nuevo. (%d intento%s antes del bloqueo temporal)', $restantes, $restantes === 1 ? '' : 's')
+            : 'Demasiados intentos fallidos. El acceso quedo bloqueado temporalmente.';
     }
-    $errorLogin = 'PIN no reconocido. Intenta de nuevo.';
 }
 
 if ($accion === 'logout') {
@@ -56,14 +72,30 @@ function ejecutarAccion(array $rolesPermitidos, string $vistaVuelta, callable $c
     global $accion;
 
     Sesion::requerirRol($rolesPermitidos);
+
+    if (!Sesion::validarCsrf($_POST['csrf_token'] ?? null)) {
+        Sesion::flash('error', 'Tu sesion o el formulario expiraron. Intenta de nuevo.');
+        header('Location: index.php?vista=' . $vistaVuelta);
+        exit;
+    }
+
     try {
         $mensaje = $callback();
         $mensaje = $mensaje ?: 'Operacion realizada correctamente.';
         Sesion::flash('ok', $mensaje);
         BitacoraController::registrar((string) $accion, $mensaje);
+    } catch (PDOException $e) {
+        // PDOException hereda de RuntimeException desde PHP 8: si este
+        // catch no fuera primero, el de abajo la atraparia y mostraria
+        // el mensaje crudo de MySQL al usuario (nombres de tabla,
+        // columnas, hasta fragmentos del SQL). Aqui se registra el
+        // detalle real solo en el log del servidor.
+        error_log('[' . $accion . '] PDOException: ' . $e->getMessage());
+        Sesion::flash('error', 'Ocurrio un error con la base de datos. Intenta de nuevo.');
     } catch (RuntimeException $e) {
         Sesion::flash('error', $e->getMessage());
     } catch (Throwable $e) {
+        error_log('[' . $accion . '] ' . get_class($e) . ': ' . $e->getMessage());
         Sesion::flash('error', 'Ocurrio un error al procesar la solicitud.');
     }
     header('Location: index.php?vista=' . $vistaVuelta);
@@ -409,6 +441,56 @@ if ($accion === 'reporte_excel' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+// ---------------- Respaldos de la base de datos (solo Administrador) ----------------
+
+if ($accion === 'respaldo_crear' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/RespaldoController.php';
+    ejecutarAccion(['administrador'], 'respaldos', function () {
+        $nombre = RespaldoController::crear();
+        return "Respaldo creado: $nombre.";
+    });
+}
+
+if ($accion === 'respaldo_restaurar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/RespaldoController.php';
+    ejecutarAccion(['administrador'], 'respaldos', function () {
+        $seguridad = RespaldoController::restaurar((string) ($_POST['nombre'] ?? ''));
+        return "Base de datos restaurada. Se guardo un respaldo del estado anterior: $seguridad.";
+    });
+}
+
+if ($accion === 'respaldo_subir_restaurar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/RespaldoController.php';
+    ejecutarAccion(['administrador'], 'respaldos', function () {
+        $seguridad = RespaldoController::subirYRestaurar($_FILES['archivo'] ?? []);
+        return "Base de datos restaurada desde el archivo subido. Se guardo un respaldo del estado anterior: $seguridad.";
+    });
+}
+
+if ($accion === 'respaldo_eliminar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/controller/RespaldoController.php';
+    ejecutarAccion(['administrador'], 'respaldos', function () {
+        $nombre = (string) ($_POST['nombre'] ?? '');
+        RespaldoController::eliminar($nombre);
+        return "Respaldo eliminado: $nombre.";
+    });
+}
+
+if ($accion === 'respaldo_descargar' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Sesion::requerirRol(['administrador']);
+    require_once __DIR__ . '/controller/RespaldoController.php';
+    $ruta = RespaldoController::rutaParaDescargar((string) ($_GET['nombre'] ?? ''));
+    if ($ruta === null) {
+        http_response_code(404);
+        exit('Respaldo no encontrado.');
+    }
+    header('Content-Type: application/sql');
+    header('Content-Disposition: attachment; filename="' . basename($ruta) . '"');
+    header('Content-Length: ' . filesize($ruta));
+    readfile($ruta);
+    exit;
+}
+
 // ---------------- Vistas (GET) ----------------
 
 // Sin sesion activa: solo se permite ver el login.
@@ -439,6 +521,7 @@ $rutasPermitidas = [
         'asistencia'  => '/view/admin/asistencia.php',
         'reportes'    => '/view/admin/reportes.php',
         'bitacora'    => '/view/admin/bitacora.php',
+        'respaldos'   => '/view/admin/respaldos.php',
     ],
     'cajero' => [
         'pos_tienda'  => '/view/cajero/pos_tienda.php',

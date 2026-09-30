@@ -105,6 +105,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
                         </button>
                         <form method="post" action="index.php?accion=producto_eliminar" class="iv-form-inline"
                               data-nombre="<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
                             <input type="hidden" name="id_producto" value="<?= $p['id'] ?>">
                             <button class="iv-icon-btn iv-icon-btn--peligro" type="submit" title="Eliminar producto">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -156,6 +157,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
             <?php endforeach; ?>
         </div>
         <form method="post" action="index.php?accion=categoria_nueva" class="iv-form-categoria">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <input type="text" name="nombre" placeholder="Nombre de la nueva categoria" required>
             <button type="submit" class="iv-btn">Agregar</button>
         </form>
@@ -186,6 +188,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
         <?php endif; ?>
 
         <form id="iv-form" method="post" action="index.php?accion=producto_nuevo">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <input type="hidden" name="id_producto" id="iv-f-id">
 
             <div class="iv-campo">
@@ -246,6 +249,7 @@ $reabrir = ($flash && $flash['tipo'] === 'error') ? Sesion::leerFlashDatos() : n
         <p class="iv-stock-actual">Producto: <strong id="iv-stock-nombre">&mdash;</strong> &middot; stock actual: <strong id="iv-stock-actual-valor">0</strong></p>
 
         <form id="iv-form-stock" method="post" action="index.php?accion=producto_stock">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <input type="hidden" name="id_producto" id="iv-stock-id">
             <div class="iv-campo">
                 <label for="iv-stock-cantidad">Cantidad a agregar (usa negativo para restar)</label>

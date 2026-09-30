@@ -21,6 +21,18 @@ class Database
     private const CLAVE   = '';
     private const CHARSET = 'utf8mb4';
 
+    /** Para RespaldoController: arma los comandos de mysqldump/mysql sin duplicar credenciales en otro archivo. */
+    public static function datosConexion(): array
+    {
+        return [
+            'host'    => self::HOST,
+            'puerto'  => self::PUERTO,
+            'nombre'  => self::NOMBRE,
+            'usuario' => self::USUARIO,
+            'clave'   => self::CLAVE,
+        ];
+    }
+
     public static function obtenerConexion(): PDO
     {
         if (self::$conexion === null) {

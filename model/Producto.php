@@ -63,6 +63,27 @@ class Producto
         return $conexion->query($sql)->fetchAll();
     }
 
+    /**
+     * Bloquea las filas de los productos dados (SELECT ... FOR UPDATE),
+     * siempre en el mismo orden (por id), antes de validar/descontar su
+     * stock dentro de una transaccion. Sin esto, dos ventas simultaneas
+     * del mismo producto podrian leer el mismo stock antes de que
+     * cualquiera confirme y las dos pasar la validacion (vendiendo mas
+     * de lo que hay). Ordenar por id evita ademas interbloqueos cuando
+     * dos carritos comparten productos en orden distinto.
+     */
+    public static function bloquearFilas(PDO $conexion, array $idsProducto): void
+    {
+        if (empty($idsProducto)) {
+            return;
+        }
+        $idsProducto = array_unique(array_map('intval', $idsProducto));
+        sort($idsProducto);
+        $marcadores = implode(',', array_fill(0, count($idsProducto), '?'));
+        $stmt = $conexion->prepare("SELECT id_producto FROM productos WHERE id_producto IN ($marcadores) FOR UPDATE");
+        $stmt->execute(array_values($idsProducto));
+    }
+
     public static function descontarStock(PDO $conexion, int $idProducto, int $cantidad): void
     {
         $stmt = $conexion->prepare(

@@ -135,6 +135,7 @@ $etiquetaEstado = [
         <div class="tq-modal__titulo" id="tq-modal-titulo">Registrar lectura manual</div>
 
         <form method="post" action="index.php?accion=tanque_lectura">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <div class="tq-campo">
                 <label for="lt_tanque">Tanque</label>
                 <select name="id_tanque" id="lt_tanque">

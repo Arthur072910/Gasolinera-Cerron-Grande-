@@ -6,6 +6,21 @@
  */
 
 if (session_status() === PHP_SESSION_NONE) {
+    // La cookie de sesion se marca "Secure" solo si la peticion ya viene
+    // por HTTPS: hoy el sistema corre sobre HTTP en WAMP/localhost, y
+    // forzar Secure ahi haria que el navegador simplemente descarte la
+    // cookie (nunca se podria iniciar sesion). El dia que esto quede
+    // detras de HTTPS real, empieza a aplicar solo sin tocar este codigo.
+    $porHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'secure'   => $porHttps,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -113,5 +128,74 @@ class Sesion
         $datos = $_SESSION['ultimo_ticket'];
         unset($_SESSION['ultimo_ticket']);
         return $datos;
+    }
+
+    /**
+     * Bloqueo temporal por intentos fallidos de PIN (fuerza bruta). Se
+     * lleva por sesion de navegador: cada terminal/pestana tiene su
+     * propio contador, igual que un lector de tarjetas fisico.
+     */
+    private const LOGIN_MAX_INTENTOS      = 5;
+    private const LOGIN_BLOQUEO_SEGUNDOS  = 120;
+
+    public static function registrarIntentoFallido(): void
+    {
+        $_SESSION['login_intentos'] = self::obtenerIntentosFallidos() + 1;
+        if ($_SESSION['login_intentos'] >= self::LOGIN_MAX_INTENTOS) {
+            $_SESSION['login_bloqueado_hasta'] = time() + self::LOGIN_BLOQUEO_SEGUNDOS;
+        }
+    }
+
+    public static function obtenerIntentosFallidos(): int
+    {
+        return (int) ($_SESSION['login_intentos'] ?? 0);
+    }
+
+    public static function intentosRestantes(): int
+    {
+        return max(0, self::LOGIN_MAX_INTENTOS - self::obtenerIntentosFallidos());
+    }
+
+    public static function segundosDeBloqueoRestantes(): int
+    {
+        $hasta = $_SESSION['login_bloqueado_hasta'] ?? null;
+        if ($hasta === null) {
+            return 0;
+        }
+        $restante = $hasta - time();
+        if ($restante <= 0) {
+            unset($_SESSION['login_bloqueado_hasta'], $_SESSION['login_intentos']);
+            return 0;
+        }
+        return $restante;
+    }
+
+    public static function reiniciarIntentosFallidos(): void
+    {
+        unset($_SESSION['login_intentos'], $_SESSION['login_bloqueado_hasta']);
+    }
+
+    /**
+     * Proteccion CSRF: un codigo secreto por sesion (no por formulario,
+     * para no romper si el usuario tiene dos pestanas abiertas) que cada
+     * formulario POST manda de vuelta como campo oculto. Sin el token
+     * correcto, index.php rechaza la accion. Evita que una pagina
+     * maliciosa en otra pestana haga que el navegador envie una accion
+     * aqui aprovechando que ya hay sesion iniciada.
+     */
+    public static function tokenCsrf(): string
+    {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    public static function validarCsrf(?string $token): bool
+    {
+        return $token !== null
+            && $token !== ''
+            && !empty($_SESSION['csrf_token'])
+            && hash_equals($_SESSION['csrf_token'], $token);
     }
 }

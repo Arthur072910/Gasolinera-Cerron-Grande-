@@ -1,0 +1,252 @@
+/**
+ * respaldos.css
+ * -----------------------------------------------------------------------
+ * Hoja de estilos exclusiva de Administrador > Respaldos
+ * (view/admin/respaldos.php). Solo se carga aqui.
+ * -----------------------------------------------------------------------
+ */
+
+:root {
+  --rb-naranja: #eb5a28;
+  --rb-naranja-fuerte: #ff6a35;
+  --rb-ceniza: #96989a;
+  --rb-pizarra: #567384;
+  --rb-rojo: #ff6b5e;
+  --rb-void: #17222b;
+  --rb-panel: #212f39;
+  --rb-panel-alt: #2b3c46;
+  --rb-borde: rgba(150, 152, 154, 0.22);
+  --rb-texto: #eef1f2;
+  --rb-texto-muted: var(--rb-ceniza);
+  --rb-f-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --rb-f-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+}
+
+body { background: var(--rb-void); }
+
+.main {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(235, 90, 40, 0.10), transparent 45%),
+    var(--rb-void);
+  min-height: 100vh;
+}
+
+.encabezado-vista { border-bottom: 1px solid var(--rb-borde); }
+.encabezado-vista h1 { color: var(--rb-texto); font-family: var(--rb-f-display); display: flex; align-items: center; gap: 10px; }
+.encabezado-vista h1::before {
+  content: ''; width: 8px; height: 8px; background: var(--rb-naranja);
+  box-shadow: 0 0 8px rgba(235, 90, 40, 0.7); flex: none;
+}
+.encabezado-vista .contexto { color: var(--rb-texto-muted); font-family: var(--rb-f-mono); }
+
+.banner-aviso {
+  background: var(--rb-panel-alt);
+  border: 1px solid var(--rb-borde);
+  border-left: 3px solid var(--rb-pizarra);
+  color: var(--rb-texto);
+  border-radius: 4px;
+  font-family: var(--rb-f-mono);
+}
+.banner-aviso.banner-aviso--error {
+  background: rgba(235, 90, 40, 0.1);
+  border: 1px solid rgba(235, 90, 40, 0.4);
+  border-left: 3px solid var(--rb-naranja);
+  color: #ffd9c7;
+}
+.banner-aviso.mostrar { display: none; }
+
+/* ---- Contenedor ---- */
+
+.rb-page {
+  position: relative;
+  background: linear-gradient(165deg, var(--rb-panel-alt), var(--rb-panel) 55%, var(--rb-void));
+  border: 1px solid var(--rb-borde);
+  border-radius: 8px;
+  padding: 28px;
+  color: var(--rb-texto);
+  font-family: var(--rb-f-mono);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+.rb-page::before {
+  content: ''; position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--rb-naranja), transparent);
+}
+.rb-page__esquina { position: absolute; width: 14px; height: 14px; border-color: var(--rb-naranja); opacity: 0.55; pointer-events: none; }
+.rb-page__esquina--tl { top: 10px; left: 10px; border-top: 2px solid; border-left: 2px solid; }
+.rb-page__esquina--tr { top: 10px; right: 10px; border-top: 2px solid; border-right: 2px solid; }
+.rb-page__esquina--bl { bottom: 10px; left: 10px; border-bottom: 2px solid; border-left: 2px solid; }
+.rb-page__esquina--br { bottom: 10px; right: 10px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* ---- Cabecera ---- */
+
+.rb-cabecera {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px; margin-bottom: 18px;
+}
+.rb-eyebrow { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rb-texto-muted); margin-bottom: 6px; }
+.rb-titulo {
+  font-family: var(--rb-f-display); font-weight: 700; font-size: 1.4rem;
+  text-transform: uppercase; letter-spacing: 0.02em; margin: 0; color: var(--rb-texto);
+}
+
+.rb-nota {
+  font-size: 0.8rem; color: var(--rb-texto-muted); line-height: 1.6;
+  padding: 12px 16px; margin-bottom: 20px;
+  border-left: 2px solid var(--rb-pizarra);
+  background: rgba(86, 115, 132, 0.07);
+  border-radius: 0 6px 6px 0;
+}
+
+/* ---- Bloques ---- */
+
+.rb-bloque {
+  border: 1px solid var(--rb-borde);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.rb-bloque__titulo {
+  font-family: var(--rb-f-display); font-weight: 600; font-size: 0.85rem;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--rb-texto); margin-bottom: 14px;
+}
+
+.rb-texto-mini { font-size: 0.8rem; color: var(--rb-texto-muted); line-height: 1.6; margin: 0 0 12px; }
+
+/* ---- Tabla de respaldos ---- */
+
+.rb-tabla-wrap { overflow-x: auto; }
+.rb-tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.rb-tabla thead th {
+  text-align: left; font-family: var(--rb-f-display); font-weight: 600;
+  font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--rb-texto-muted); padding: 0 12px 12px; border-bottom: 1px solid var(--rb-borde);
+}
+.rb-tabla tbody td { padding: 11px 12px; border-bottom: 1px solid rgba(150, 152, 154, 0.1); color: var(--rb-texto); }
+.rb-tabla tbody tr:last-child td { border-bottom: none; }
+.rb-tabla tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+.rb-archivo { font-size: 0.8rem; color: var(--rb-texto-muted); }
+.rb-vacio { text-align: center; color: var(--rb-texto-muted); font-style: italic; padding: 24px 0 !important; }
+
+.rb-acciones { display: flex; gap: 6px; }
+.rb-acciones form { margin: 0; }
+
+.rb-btn-mini {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 5px;
+  border: 1px solid var(--rb-borde); background: transparent;
+  color: var(--rb-texto-muted); cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+  text-decoration: none;
+}
+.rb-btn-mini:hover { border-color: rgba(235, 90, 40, 0.5); color: var(--rb-texto); }
+.rb-btn-mini--alerta:hover { border-color: rgba(232, 185, 61, 0.5); color: #e8b93d; }
+.rb-btn-mini--borrar:hover { border-color: rgba(255, 107, 94, 0.5); color: var(--rb-rojo); }
+
+/* ---- Subir archivo ---- */
+
+.rb-subir { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.rb-subir input[type="file"] {
+  flex: 1; min-width: 220px;
+  font-family: var(--rb-f-mono); font-size: 0.82rem;
+  padding: 9px 10px; border-radius: 5px; border: 1px solid var(--rb-borde);
+  background: var(--rb-void); color: var(--rb-texto);
+}
+
+/* ---- Bloque de codigo (tarea programada) ---- */
+
+.rb-codigo {
+  font-family: var(--rb-f-mono); font-size: 0.78rem;
+  background: var(--rb-void); border: 1px solid var(--rb-borde); border-radius: 6px;
+  padding: 12px 14px; margin-bottom: 12px; color: var(--rb-texto);
+  word-break: break-all;
+}
+.rb-codigo div { padding: 3px 0; }
+.rb-codigo__etiqueta { color: var(--rb-texto-muted); margin-right: 6px; }
+
+/* ---- Pasos numerados (guia para alguien sin conocimientos tecnicos) ---- */
+
+.rb-pasos {
+  margin: 14px 0; padding-left: 0;
+  counter-reset: rb-paso;
+  list-style: none;
+}
+.rb-pasos li {
+  position: relative;
+  margin-bottom: 16px;
+  padding-left: 38px;
+  font-size: 0.85rem;
+  color: var(--rb-texto);
+  line-height: 1.6;
+}
+.rb-pasos li:last-child { margin-bottom: 0; }
+.rb-pasos li::before {
+  counter-increment: rb-paso;
+  content: counter(rb-paso);
+  position: absolute; left: 0; top: -1px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(235, 90, 40, 0.14);
+  border: 1px solid rgba(235, 90, 40, 0.4);
+  color: var(--rb-naranja);
+  font-family: var(--rb-f-display); font-weight: 700; font-size: 0.8rem;
+}
+.rb-pasos strong { color: var(--rb-texto); }
+.rb-pasos em { color: var(--rb-texto-muted); font-style: italic; }
+
+.rb-codigo--copiable {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 8px; margin-bottom: 4px;
+}
+.rb-codigo--copiable code { flex: 1; min-width: 0; word-break: break-all; }
+
+.rb-btn-copiar {
+  flex: none;
+  font-family: var(--rb-f-display); font-weight: 600; font-size: 0.7rem;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 7px 12px; border-radius: 5px;
+  border: 1px solid var(--rb-borde); background: var(--rb-panel-alt);
+  color: var(--rb-texto-muted); cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+}
+.rb-btn-copiar:hover { border-color: rgba(235, 90, 40, 0.5); color: var(--rb-texto); }
+.rb-btn-copiar.rb-btn-copiar--hecho { border-color: rgba(61, 220, 132, 0.5); color: #3ddc84; }
+
+.rb-texto-mini--nota {
+  padding-top: 10px; margin-top: 4px;
+  border-top: 1px dashed var(--rb-borde);
+}
+
+/* ---- Botones ---- */
+
+.rb-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--rb-borde); border-radius: 5px;
+  background: var(--rb-void); color: var(--rb-texto);
+  font-family: var(--rb-f-display); font-weight: 600; font-size: 0.82rem;
+  letter-spacing: 0.03em; padding: 10px 16px; cursor: pointer;
+  text-decoration: none; white-space: nowrap;
+  transition: border-color 0.12s ease, transform 0.08s ease;
+}
+.rb-btn:hover { border-color: rgba(235, 90, 40, 0.5); }
+.rb-btn:active { transform: translateY(1px); }
+.rb-btn--primario {
+  background: linear-gradient(165deg, var(--rb-naranja-fuerte), var(--rb-naranja));
+  border-color: transparent; color: #170a04;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 18px -10px rgba(235, 90, 40, 0.6);
+}
+.rb-btn--alerta {
+  background: rgba(255, 107, 94, 0.12);
+  border-color: rgba(255, 107, 94, 0.4);
+  color: #ffb3ab;
+}
+.rb-btn--alerta:hover { border-color: rgba(255, 107, 94, 0.7); }
+
+@media (max-width: 560px) {
+  .rb-cabecera { flex-direction: column; }
+  .rb-cabecera form { width: 100%; }
+  .rb-btn--primario { width: 100%; justify-content: center; }
+}

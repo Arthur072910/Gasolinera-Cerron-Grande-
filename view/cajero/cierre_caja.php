@@ -95,6 +95,7 @@ $nombresPago = ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'mixto' => 'Mi
         </div>
     <?php else: ?>
         <form class="cc-form" method="post" action="index.php?accion=cerrar_caja" id="form-cierre-caja">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
             <div class="cc-campo">
                 <label for="monto_entregado">Monto declarado por el cajero (efectivo contado)</label>
                 <input type="text" name="monto_declarado" id="monto_entregado" inputmode="decimal" placeholder="0.00" autocomplete="off" required>

@@ -41,6 +41,7 @@
     <?php endif; ?>
 
     <form method="post" action="index.php?accion=login" id="form-login">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Sesion::tokenCsrf()) ?>">
         <label class="login-campo-label" for="pin">PIN de acceso</label>
 
         <div class="login-pin" <?= !empty($errorLogin) ? "data-con-error='1'" : '' ?>>
